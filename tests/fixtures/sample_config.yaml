@@ -1,0 +1,17 @@
+experiment_name: "Test Experiment"
+group_column: treatment
+control_group: "0"
+significance_threshold: 0.05
+correction_method: bonferroni
+metrics:
+  - name: paid_conversion
+    column: paid_signup_date
+    type: binary
+    role: primary
+    higher_is_better: true
+    derive: not_null
+  - name: paid_plan_canceled
+    column: paid_plan_canceled
+    type: binary
+    role: guardrail
+    higher_is_better: false
