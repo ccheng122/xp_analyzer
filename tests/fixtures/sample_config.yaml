@@ -1,3 +1,4 @@
+# Use with tests/fixtures/sample_with_dates.csv
 experiment_name: "Test Experiment"
 group_column: treatment
 control_group: "0"
