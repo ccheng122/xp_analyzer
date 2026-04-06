@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from xp_analyzer.analyzer import analyze_continuous_metric
+from xp_analyzer.analyzer import analyze_binary_metric
 
 
 def test_continuous_detects_significant_difference():
@@ -45,3 +46,42 @@ def test_continuous_sets_metric_metadata():
     assert result.control_n == 1
     assert result.treatment_n == 1
     assert result.p_value_corrected is None  # correction applied later
+
+
+def test_binary_detects_significant_difference():
+    control = [0] * 900 + [1] * 100   # 10% conversion
+    treatment = [0] * 750 + [1] * 250  # 25% conversion
+    result = analyze_binary_metric("conversion", control, treatment, alpha=0.05)
+    assert result.is_significant is True
+    assert result.relative_lift == pytest.approx(1.5, rel=0.01)
+    assert result.p_value < 0.05
+
+
+def test_binary_detects_no_significant_difference():
+    control = [0] * 800 + [1] * 200   # 20%
+    treatment = [0] * 810 + [1] * 190  # 19%
+    result = analyze_binary_metric("conversion", control, treatment, alpha=0.05)
+    assert result.is_significant is False
+
+
+def test_binary_computes_correct_means():
+    control = [0, 0, 0, 1]   # 25%
+    treatment = [1, 1, 0, 0]  # 50%
+    result = analyze_binary_metric("conversion", control, treatment, alpha=0.05)
+    assert result.control_mean == pytest.approx(0.25)
+    assert result.treatment_mean == pytest.approx(0.5)
+    assert result.relative_lift == pytest.approx(1.0)
+
+
+def test_binary_zero_control_rate_relative_lift():
+    control = [0] * 100
+    treatment = [1] * 20 + [0] * 80
+    result = analyze_binary_metric("conversion", control, treatment, alpha=0.05)
+    assert result.relative_lift == float("inf")
+
+
+def test_binary_sets_metric_metadata():
+    result = analyze_binary_metric("conversion", [0, 1], [1, 1], alpha=0.05)
+    from xp_analyzer.models import MetricType
+    assert result.metric_type == MetricType.BINARY
+    assert result.p_value_corrected is None
