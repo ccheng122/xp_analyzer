@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
-xp-analyzer = "xp_analyzer.cli:main"
+xp-analyzer = "xp_analyzer.cli:cli"
 
 [build-system]
 requires = ["hatchling"]
