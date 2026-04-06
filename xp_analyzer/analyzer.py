@@ -2,7 +2,7 @@ from typing import Optional
 import numpy as np
 from scipy import stats
 from statsmodels.stats.proportion import proportions_ztest
-from xp_analyzer.models import MetricResult, MetricType, MetricRole
+from xp_analyzer.models import MetricResult, MetricType, MetricRole, ExperimentConfig
 
 
 def analyze_continuous_metric(
@@ -101,3 +101,65 @@ def analyze_binary_metric(
         control_n=len(control),
         treatment_n=len(treatment),
     )
+
+
+def apply_correction(p_values: list[float], method: str) -> list[float]:
+    n = len(p_values)
+    if method == "bonferroni":
+        return [min(p * n, 1.0) for p in p_values]
+    if method == "benjamini-hochberg":
+        # Benjamini-Hochberg procedure
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        corrected = [0.0] * n
+        for rank, (orig_idx, p) in enumerate(indexed, start=1):
+            corrected[orig_idx] = min(p * n / rank, 1.0)
+        # Enforce monotonicity (step-down): walk sorted order, cap each by next
+        sorted_indices = [orig_idx for orig_idx, _ in sorted(enumerate(p_values), key=lambda x: x[1])]
+        for i in range(len(sorted_indices) - 2, -1, -1):
+            corrected[sorted_indices[i]] = min(corrected[sorted_indices[i]], corrected[sorted_indices[i + 1]])
+        return corrected
+    raise ValueError(f"Unknown correction method: {method}")
+
+
+def run_analysis(
+    config: ExperimentConfig,
+    groups: dict[str, dict[str, list]],
+) -> list[MetricResult]:
+    control = groups[config.control_group]
+    treatment_group = next(g for g in groups if g != config.control_group)
+    treatment = groups[treatment_group]
+
+    results = []
+    for metric in config.metrics:
+        ctrl_vals = control[metric.name]
+        trt_vals = treatment[metric.name]
+        if metric.type == MetricType.CONTINUOUS:
+            result = analyze_continuous_metric(
+                metric.name, ctrl_vals, trt_vals,
+                alpha=config.significance_threshold,
+                higher_is_better=metric.higher_is_better,
+                role=metric.role,
+            )
+        else:
+            result = analyze_binary_metric(
+                metric.name, ctrl_vals, trt_vals,
+                alpha=config.significance_threshold,
+                higher_is_better=metric.higher_is_better,
+                role=metric.role,
+            )
+        results.append(result)
+
+    # Apply multiple comparison correction to primary metrics only
+    primary_indices = [i for i, m in enumerate(config.metrics) if m.role.value == "primary"]
+    primary_p_values = [results[i].p_value for i in primary_indices]
+    corrected = apply_correction(primary_p_values, method=config.correction_method)
+    for i, idx in enumerate(primary_indices):
+        results[idx].p_value_corrected = corrected[i]
+        results[idx].is_significant = corrected[i] < config.significance_threshold
+
+    # Guardrail/secondary metrics: use their own p_value (no correction)
+    for i, metric in enumerate(config.metrics):
+        if metric.role.value != "primary":
+            results[i].p_value_corrected = results[i].p_value
+
+    return results

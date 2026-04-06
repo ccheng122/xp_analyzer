@@ -85,3 +85,57 @@ def test_binary_sets_metric_metadata():
     from xp_analyzer.models import MetricType
     assert result.metric_type == MetricType.BINARY
     assert result.p_value_corrected is None
+
+
+from xp_analyzer.analyzer import apply_correction, run_analysis
+from xp_analyzer.config import load_config
+from xp_analyzer.loader import load_experiment_data
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_bonferroni_multiplies_by_n():
+    corrected = apply_correction([0.01, 0.03, 0.04], method="bonferroni")
+    assert corrected == pytest.approx([0.03, 0.09, 0.12])
+
+
+def test_bonferroni_caps_at_one():
+    corrected = apply_correction([0.5, 0.6, 0.7], method="bonferroni")
+    assert all(p <= 1.0 for p in corrected)
+
+
+def test_bh_correction_returns_same_length():
+    p_values = [0.001, 0.02, 0.04, 0.2]
+    corrected = apply_correction(p_values, method="benjamini-hochberg")
+    assert len(corrected) == 4
+
+
+def test_bh_corrected_ge_original():
+    p_values = [0.001, 0.02, 0.04, 0.2]
+    corrected = apply_correction(p_values, method="benjamini-hochberg")
+    assert all(c >= p for c, p in zip(corrected, p_values))
+
+
+def test_run_analysis_returns_one_result_per_metric():
+    config = load_config(FIXTURES / "sample_config.yaml")
+    groups = load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+    results = run_analysis(config, groups)
+    assert len(results) == len(config.metrics)
+
+
+def test_run_analysis_applies_correction():
+    config = load_config(FIXTURES / "sample_config.yaml")
+    groups = load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+    results = run_analysis(config, groups)
+    assert all(r.p_value_corrected is not None for r in results)
+
+
+def test_run_analysis_uses_correct_metric_roles():
+    config = load_config(FIXTURES / "sample_config.yaml")
+    groups = load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+    results = run_analysis(config, groups)
+    from xp_analyzer.models import MetricRole
+    roles = {r.metric_name: r.metric_role for r in results}
+    assert roles["paid_conversion"] == MetricRole.PRIMARY
+    assert roles["paid_plan_canceled"] == MetricRole.GUARDRAIL
