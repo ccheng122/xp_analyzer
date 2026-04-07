@@ -71,7 +71,9 @@ def generate_recommendation(
         if metric_results is not None:
             sig_primary_results = [
                 r for r in metric_results
-                if r.metric_role == MetricRole.PRIMARY and r.is_significant
+                if r.metric_role == MetricRole.PRIMARY
+                and r.is_significant
+                and _is_improvement(r.relative_lift, r.higher_is_better)
             ]
             if sig_primary_results:
                 violation_names = {f.metric_name for f in guardrail_violations}
@@ -87,7 +89,8 @@ def generate_recommendation(
                     for g in guardrail_results:
                         for p in sig_primary_results:
                             if _same_raw_direction(g, p):
-                                pairs.append(f"{g.metric_name} increased alongside {p.metric_name}")
+                                direction_word = "increased" if g.relative_lift > 0 else "decreased"
+                                pairs.append(f"{g.metric_name} {direction_word} alongside {p.metric_name}")
                     pair_str = "; ".join(pairs)
                     return Recommendation(
                         decision="review guardrail",
