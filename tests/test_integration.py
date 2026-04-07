@@ -29,4 +29,4 @@ def test_integration_produces_valid_json(tmp_path):
     data = json.loads(out.read_text())
     assert data["experiment_name"] == "Free to Plus Upgrade Experiment"
     assert len(data["metric_results"]) == 2
-    assert data["recommendation"]["decision"] in ["ship", "don't ship", "needs more data", "inconclusive"]
+    assert data["recommendation"]["decision"] in ["ship", "don't ship", "needs more data", "inconclusive", "review guardrail"]

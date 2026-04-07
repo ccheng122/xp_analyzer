@@ -15,6 +15,11 @@ def _format_lift(relative_lift: float) -> str:
     return f"{relative_lift:+.1%}"
 
 
+def _same_raw_direction(guardrail: MetricResult, primary: MetricResult) -> bool:
+    """True if guardrail and primary moved in the same raw direction (both up or both down)."""
+    return (guardrail.relative_lift > 0) == (primary.relative_lift > 0)
+
+
 def generate_findings(metric_results: list[MetricResult]) -> list[Finding]:
     findings = []
     for r in metric_results:
@@ -48,7 +53,10 @@ def generate_findings(metric_results: list[MetricResult]) -> list[Finding]:
     return findings
 
 
-def generate_recommendation(findings: list[Finding]) -> Recommendation:
+def generate_recommendation(
+    findings: list[Finding],
+    metric_results: list[MetricResult] | None = None,
+) -> Recommendation:
     guardrail_violations = [
         f for f in findings
         if f.metric_role == MetricRole.GUARDRAIL and f.is_significant and f.direction == "negative"
@@ -59,6 +67,41 @@ def generate_recommendation(findings: list[Finding]) -> Recommendation:
     negative_primary = [f for f in significant_primary if f.direction == "negative"]
 
     if guardrail_violations:
+        # When metric_results are available, check for correlation with significant primary metrics
+        if metric_results is not None:
+            sig_primary_results = [
+                r for r in metric_results
+                if r.metric_role == MetricRole.PRIMARY and r.is_significant
+            ]
+            if sig_primary_results:
+                violation_names = {f.metric_name for f in guardrail_violations}
+                guardrail_results = [
+                    r for r in metric_results if r.metric_name in violation_names
+                ]
+                all_correlated = all(
+                    any(_same_raw_direction(g, p) for p in sig_primary_results)
+                    for g in guardrail_results
+                )
+                if all_correlated:
+                    pairs = []
+                    for g in guardrail_results:
+                        for p in sig_primary_results:
+                            if _same_raw_direction(g, p):
+                                pairs.append(f"{g.metric_name} increased alongside {p.metric_name}")
+                    pair_str = "; ".join(pairs)
+                    return Recommendation(
+                        decision="review guardrail",
+                        rationale=(
+                            f"{pair_str} — this may reflect volume growth rather than quality "
+                            f"degradation. Verify the metric rate among the affected population "
+                            f"before deciding."
+                        ),
+                        caveats=[
+                            "Verify the guardrail metric rate within the affected subpopulation "
+                            "before making a ship decision."
+                        ],
+                    )
+
         violated = ", ".join(f.metric_name for f in guardrail_violations)
         return Recommendation(
             decision="don't ship",

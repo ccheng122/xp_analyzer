@@ -39,7 +39,7 @@ def analyze(csv_path: str, config_path: str, output_path: str | None, fmt: str) 
         groups = load_experiment_data(csv, config)
         metric_results = run_analysis(config, groups)
         findings = generate_findings(metric_results)
-        recommendation = generate_recommendation(findings)
+        recommendation = generate_recommendation(findings, metric_results=metric_results)
 
         treatment_groups = [g for g in groups if g != config.control_group]
         total_users = sum(

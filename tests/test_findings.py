@@ -101,3 +101,46 @@ def test_recommendation_has_caveats_list():
     findings = [Finding("cvr", MetricRole.PRIMARY, True, "positive", "win")]
     rec = generate_recommendation(findings)
     assert isinstance(rec.caveats, list)
+
+
+def test_correlated_guardrail_returns_review_guardrail():
+    # Guardrail and primary both went UP (positive lift) — correlated
+    primary_result = make_result("paid_conversion", MetricRole.PRIMARY, True, 0.214)
+    guardrail_result = make_result("paid_plan_canceled", MetricRole.GUARDRAIL, True, 0.225, higher_is_better=False)
+    findings = generate_findings([primary_result, guardrail_result])
+    rec = generate_recommendation(findings, metric_results=[primary_result, guardrail_result])
+    assert rec.decision == "review guardrail"
+    assert "paid_plan_canceled" in rec.rationale
+    assert "paid_conversion" in rec.rationale
+
+
+def test_uncorrelated_guardrail_stays_dont_ship():
+    # Primary went UP (+0.214), guardrail (higher_is_better=True) went DOWN (-0.10).
+    # Opposite directions → not correlated → genuine "don't ship".
+    primary_result = make_result("paid_conversion", MetricRole.PRIMARY, True, 0.214)
+    guardrail_result = make_result("revenue_per_user", MetricRole.GUARDRAIL, True, -0.10, higher_is_better=True)
+    findings = generate_findings([primary_result, guardrail_result])
+    rec = generate_recommendation(findings, metric_results=[primary_result, guardrail_result])
+    assert rec.decision == "don't ship"
+
+
+def test_mixed_guardrails_one_correlated_one_not_stays_dont_ship():
+    # Two violations: one correlated with primary, one not
+    primary_result = make_result("paid_conversion", MetricRole.PRIMARY, True, 0.214)
+    correlated_guardrail = make_result("paid_plan_canceled", MetricRole.GUARDRAIL, True, 0.225, higher_is_better=False)
+    uncorrelated_guardrail = make_result("revenue_per_user", MetricRole.GUARDRAIL, True, -0.10, higher_is_better=True)
+    findings = generate_findings([primary_result, correlated_guardrail, uncorrelated_guardrail])
+    rec = generate_recommendation(
+        findings,
+        metric_results=[primary_result, correlated_guardrail, uncorrelated_guardrail],
+    )
+    assert rec.decision == "don't ship"
+
+
+def test_generate_recommendation_backward_compatible_no_metric_results():
+    # Called with one argument (old signature) — correlated check is skipped
+    findings = [
+        Finding("paid_plan_canceled", MetricRole.GUARDRAIL, is_significant=True, direction="negative", summary="violation"),
+    ]
+    rec = generate_recommendation(findings)
+    assert rec.decision == "don't ship"
