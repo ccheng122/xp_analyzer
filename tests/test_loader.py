@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from xp_analyzer.loader import load_experiment_data
-from xp_analyzer.models import ExperimentConfig, MetricConfig, MetricType, MetricRole
+from xp_analyzer.models import ExperimentConfig, MetricConfig, MetricType, MetricRole, FilterBy
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -69,3 +69,64 @@ def test_load_missing_group_column_raises():
     config = make_config([], group_column="bad_group_col")
     with pytest.raises(ValueError, match="Group column 'bad_group_col' not found"):
         load_experiment_data(FIXTURES / "sample.csv", config)
+
+
+def test_filter_by_returns_filtered_values():
+    config = make_config([
+        MetricConfig(
+            name="canceled",
+            column="paid_plan_canceled",
+            type=MetricType.BINARY,
+            role=MetricRole.GUARDRAIL,
+            higher_is_better=False,
+            filter_by=FilterBy(column="paid_signup_date", condition="not_null"),
+        ),
+    ])
+    groups = load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+    # Only users with a paid_signup_date (converters) are included
+    assert groups["0"]["canceled"] == [0, 0]
+    assert groups["1"]["canceled"] == [0, 0, 0]
+
+
+def test_filter_by_reports_filtered_n():
+    config = make_config([
+        MetricConfig(
+            name="canceled",
+            column="paid_plan_canceled",
+            type=MetricType.BINARY,
+            role=MetricRole.GUARDRAIL,
+            higher_is_better=False,
+            filter_by=FilterBy(column="paid_signup_date", condition="not_null"),
+        ),
+    ])
+    groups = load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+    assert len(groups["0"]["canceled"]) == 2   # 2 converters in control
+    assert len(groups["1"]["canceled"]) == 3   # 3 converters in treatment
+
+
+def test_filter_by_missing_column_raises():
+    config = make_config([
+        MetricConfig(
+            name="canceled",
+            column="paid_plan_canceled",
+            type=MetricType.BINARY,
+            role=MetricRole.GUARDRAIL,
+            filter_by=FilterBy(column="nonexistent_col", condition="not_null"),
+        ),
+    ])
+    with pytest.raises(ValueError, match="Filter column 'nonexistent_col' not found in CSV"):
+        load_experiment_data(FIXTURES / "sample_with_dates.csv", config)
+
+
+def test_filter_by_unknown_condition_raises():
+    config = make_config([
+        MetricConfig(
+            name="canceled",
+            column="paid_plan_canceled",
+            type=MetricType.BINARY,
+            role=MetricRole.GUARDRAIL,
+            filter_by=FilterBy(column="paid_signup_date", condition="is_truthy"),
+        ),
+    ])
+    with pytest.raises(ValueError, match="Unknown filter condition: 'is_truthy'"):
+        load_experiment_data(FIXTURES / "sample_with_dates.csv", config)

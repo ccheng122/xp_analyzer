@@ -1,6 +1,14 @@
 from pathlib import Path
 import pandas as pd
-from xp_analyzer.models import ExperimentConfig
+from xp_analyzer.models import ExperimentConfig, FilterBy
+
+
+def _apply_filter(df: pd.DataFrame, filter_by: FilterBy) -> pd.Series:
+    if filter_by.column not in df.columns:
+        raise ValueError(f"Filter column '{filter_by.column}' not found in CSV")
+    if filter_by.condition == "not_null":
+        return df[filter_by.column].notna()
+    raise ValueError(f"Unknown filter condition: '{filter_by.condition}'")
 
 
 def load_experiment_data(
@@ -9,6 +17,7 @@ def load_experiment_data(
     """
     Returns: {group_name: {metric_name: [values]}}
     Group names are always strings.
+    When a metric has filter_by, values and n reflect the filtered subpopulation only.
     """
     df = pd.read_csv(csv_path)
 
@@ -27,7 +36,12 @@ def load_experiment_data(
         group_name = str(group_name)
         groups[group_name] = {}
         for metric in config.metrics:
-            series = group_df[metric.column]
+            if metric.filter_by is not None:
+                mask = _apply_filter(group_df, metric.filter_by)
+                filtered_df = group_df[mask]
+            else:
+                filtered_df = group_df
+            series = filtered_df[metric.column]
             if metric.derive == "not_null":
                 values = series.notna().astype(int).tolist()
             else:
