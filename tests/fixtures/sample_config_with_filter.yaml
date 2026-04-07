@@ -1,0 +1,15 @@
+# Use with tests/fixtures/sample_with_dates.csv
+experiment_name: "Filter Test Experiment"
+group_column: treatment
+control_group: "0"
+significance_threshold: 0.05
+correction_method: bonferroni
+metrics:
+  - name: paid_plan_canceled
+    column: paid_plan_canceled
+    type: binary
+    role: guardrail
+    higher_is_better: false
+    filter_by:
+      column: paid_signup_date
+      condition: not_null

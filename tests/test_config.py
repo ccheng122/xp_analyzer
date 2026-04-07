@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from xp_analyzer.config import load_config
-from xp_analyzer.models import MetricType, MetricRole
+from xp_analyzer.models import MetricType, MetricRole, FilterBy
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -44,3 +44,55 @@ def test_load_config_missing_required_field_raises(tmp_path):
     bad_config.write_text("experiment_name: oops\n")
     with pytest.raises(ValueError, match="group_column"):
         load_config(bad_config)
+
+
+def test_load_config_parses_filter_by():
+    config = load_config(FIXTURES / "sample_config_with_filter.yaml")
+    guardrail = config.metrics[0]
+    assert guardrail.filter_by is not None
+    assert isinstance(guardrail.filter_by, FilterBy)
+    assert guardrail.filter_by.column == "paid_signup_date"
+    assert guardrail.filter_by.condition == "not_null"
+
+
+def test_load_config_filter_by_none_when_absent():
+    config = load_config(FIXTURES / "sample_config.yaml")
+    # existing sample_config.yaml has no filter_by — should be None
+    for metric in config.metrics:
+        assert metric.filter_by is None
+
+
+def test_load_config_filter_by_missing_column_key_raises(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        "experiment_name: test\n"
+        "group_column: treatment\n"
+        "control_group: '0'\n"
+        "metrics:\n"
+        "  - name: m\n"
+        "    column: c\n"
+        "    type: binary\n"
+        "    role: primary\n"
+        "    filter_by:\n"
+        "      condition: not_null\n"
+    )
+    with pytest.raises(ValueError, match="filter_by missing required key: 'column'"):
+        load_config(bad)
+
+
+def test_load_config_filter_by_missing_condition_key_raises(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        "experiment_name: test\n"
+        "group_column: treatment\n"
+        "control_group: '0'\n"
+        "metrics:\n"
+        "  - name: m\n"
+        "    column: c\n"
+        "    type: binary\n"
+        "    role: primary\n"
+        "    filter_by:\n"
+        "      column: paid_signup_date\n"
+    )
+    with pytest.raises(ValueError, match="filter_by missing required key: 'condition'"):
+        load_config(bad)
