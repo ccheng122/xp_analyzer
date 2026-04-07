@@ -15,6 +15,12 @@ class MetricRole(str, Enum):
 
 
 @dataclass
+class FilterBy:
+    column: str
+    condition: str  # supported: "not_null"
+
+
+@dataclass
 class MetricConfig:
     name: str
     column: str
@@ -22,6 +28,7 @@ class MetricConfig:
     role: MetricRole
     higher_is_better: bool = True
     derive: Optional[str] = None  # "not_null" | None
+    filter_by: Optional[FilterBy] = None
 
 
 @dataclass
@@ -65,7 +72,7 @@ class Finding:
 
 @dataclass
 class Recommendation:
-    decision: str  # "ship" | "don't ship" | "needs more data" | "inconclusive"
+    decision: str  # "ship" | "don't ship" | "needs more data" | "inconclusive" | "review guardrail"
     rationale: str
     caveats: list[str] = field(default_factory=list)
 
