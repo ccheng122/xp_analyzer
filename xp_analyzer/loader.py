@@ -28,6 +28,12 @@ def load_experiment_data(
         if metric.column not in df.columns:
             raise ValueError(f"Column '{metric.column}' not found in CSV")
 
+    for metric in config.metrics:
+        if metric.filter_by is not None and metric.filter_by.column not in df.columns:
+            raise ValueError(
+                f"Filter column '{metric.filter_by.column}' not found in CSV"
+            )
+
     # Normalize group column to string
     df[config.group_column] = df[config.group_column].astype(str)
 
