@@ -107,3 +107,15 @@ def test_markdown_contains_table_headers():
     output = render_markdown(make_result())
     assert "Control" in output
     assert "Treatment" in output
+
+
+def test_markdown_review_guardrail_renders_with_warning_emoji():
+    result = make_result()
+    result.recommendation = Recommendation(
+        decision="review guardrail",
+        rationale="paid_plan_canceled increased alongside paid_conversion — may reflect volume growth.",
+        caveats=["Verify rate among converters."],
+    )
+    output = render_markdown(result)
+    assert "⚠" in output
+    assert "review guardrail" in output.lower()

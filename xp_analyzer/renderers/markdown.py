@@ -40,7 +40,13 @@ def _render_metric_table(result: MetricResult) -> str:
 
 
 def render_markdown(result: ExperimentResult) -> str:
-    decision_emoji = {"ship": "✓", "don't ship": "✗", "needs more data": "?", "inconclusive": "~"}
+    decision_emoji = {
+        "ship": "✓",
+        "don't ship": "✗",
+        "needs more data": "?",
+        "inconclusive": "~",
+        "review guardrail": "⚠",
+    }
     emoji = decision_emoji.get(result.recommendation.decision, "")
 
     sections = [
