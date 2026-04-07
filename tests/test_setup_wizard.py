@@ -32,16 +32,40 @@ FULL_INPUT = "\n".join([
     "primary",         # role
     "binary",          # type (default is binary, just confirm)
     "y",               # derive not_null (non-binary values detected)
+    "n",               # filter to subset? (new)
     "y",               # higher is better
     "paid_conversion", # metric name
     # --- paid_plan_canceled ---
     "guardrail",       # role
     "binary",          # type
+    "n",               # filter to subset? (new)
     "n",               # higher is better = False
     "",                # metric name (use column name default)
     # --- global settings ---
     "0.05",            # significance threshold
     "bonferroni",      # correction method
+])
+
+# Input for testing filter_by — skip paid_signup_date, add filter to paid_plan_canceled
+FILTER_INPUT = "\n".join([
+    "My Experiment",      # experiment name
+    "treatment",          # group column
+    "0",                  # control group value
+    # --- user_id ---
+    "skip",               # role for user_id
+    # --- paid_signup_date ---
+    "skip",               # skip this column
+    # --- paid_plan_canceled ---
+    "guardrail",          # role
+    "binary",             # type
+    "y",                  # filter to subset?
+    "paid_signup_date",   # filter column (Choice from CSV columns)
+    "not_null",           # condition (Choice: ["not_null"])
+    "n",                  # higher is better = False
+    "",                   # metric name (use column name default)
+    # --- global settings ---
+    "0.05",               # significance threshold
+    "bonferroni",         # correction method
 ])
 
 
@@ -82,6 +106,7 @@ def test_setup_guardrail_metric_fields(tmp_path):
     assert guardrail["column"] == "paid_plan_canceled"
     assert guardrail["higher_is_better"] is False
     assert guardrail.get("derive") is None
+    assert guardrail.get("filter_by") is None
 
 
 def test_setup_missing_csv_exits_nonzero():
@@ -95,3 +120,13 @@ def test_setup_prints_run_instructions(tmp_path):
     result = run_setup(SAMPLE_CSV, output_path=out, user_input=FULL_INPUT)
     assert "xp-analyzer" in result.output
     assert "--config" in result.output
+
+
+def test_setup_filter_by_prompt_produces_correct_config(tmp_path):
+    out = str(tmp_path / "config.yaml")
+    result = run_setup(SAMPLE_CSV, output_path=out, user_input=FILTER_INPUT)
+    assert result.exit_code == 0, result.output
+    config = yaml.safe_load(Path(out).read_text())
+    guardrail = next(m for m in config["metrics"] if m["role"] == "guardrail")
+    assert guardrail["filter_by"]["column"] == "paid_signup_date"
+    assert guardrail["filter_by"]["condition"] == "not_null"

@@ -63,6 +63,18 @@ def run_wizard(csv_path: Path) -> dict:
             if click.confirm("    Non-binary values detected. Derive as binary (non-null = 1)?", default=True):
                 derive = "not_null"
 
+        filter_by = None
+        if click.confirm("    Filter to a subset of users?", default=False):
+            filter_col = click.prompt(
+                "      Filter column",
+                type=click.Choice(all_columns),
+            )
+            condition = click.prompt(
+                "      Condition",
+                type=click.Choice(["not_null"]),
+            )
+            filter_by = {"column": filter_col, "condition": condition}
+
         higher_is_better = click.confirm("    Higher is better?", default=True)
 
         name = click.prompt(f"    Metric name", default=col)
@@ -76,6 +88,8 @@ def run_wizard(csv_path: Path) -> dict:
         }
         if derive:
             entry["derive"] = derive
+        if filter_by:
+            entry["filter_by"] = filter_by
         metrics.append(entry)
 
     click.echo("")
