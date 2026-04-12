@@ -81,3 +81,17 @@ def test_analyze_bad_config(client):
     )
     assert response.status_code == 400
     assert 'error' in response.get_json()
+
+
+def test_analyze_invalid_config_json(client):
+    csv_content = "variant,converted\n0,1\n1,0\n"
+    response = client.post(
+        '/api/analyze',
+        data={
+            'csv': (BytesIO(csv_content.encode()), 'data.csv'),
+            'config': 'not-valid-json{{{',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+    assert 'error' in response.get_json()
