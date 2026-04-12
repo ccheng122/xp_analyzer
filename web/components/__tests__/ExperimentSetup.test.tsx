@@ -35,4 +35,21 @@ describe('ExperimentSetup', () => {
     await userEvent.click(screen.getByRole('button', { name: /continue/i }))
     expect(onContinue).toHaveBeenCalledOnce()
   })
+
+  it('clears control_group when group_column changes', async () => {
+    const onUpdate = vi.fn()
+    render(
+      <ExperimentSetup
+        headers={headers}
+        csvFile={csvFile}
+        config={{ experiment_name: 'Test', group_column: 'variant', control_group: '0' }}
+        onUpdate={onUpdate}
+        onContinue={vi.fn()}
+      />
+    )
+    await userEvent.selectOptions(screen.getByDisplayValue('variant'), 'converted')
+    expect(onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ group_column: 'converted', control_group: undefined })
+    )
+  })
 })

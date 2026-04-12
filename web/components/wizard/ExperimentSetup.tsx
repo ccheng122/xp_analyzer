@@ -16,7 +16,9 @@ export function ExperimentSetup({ headers, csvFile, config, onUpdate, onContinue
 
   useEffect(() => {
     if (config.group_column) {
-      getUniqueColumnValues(csvFile, config.group_column).then(setGroupValues)
+      getUniqueColumnValues(csvFile, config.group_column)
+        .then(setGroupValues)
+        .catch(() => setGroupValues([]))
     }
   }, [csvFile, config.group_column])
 

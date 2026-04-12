@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UploadCsv } from '../wizard/UploadCsv'
+import * as csvLib from '@/lib/csv'
 
 describe('UploadCsv', () => {
   it('shows drop zone initially', () => {
@@ -22,5 +23,19 @@ describe('UploadCsv', () => {
     expect(arg.headers).toContain('variant')
     expect(arg.rowCount).toBe(2)
     expect(arg.file).toBe(file)
+  })
+
+  it('shows error message when CSV parsing fails', async () => {
+    vi.spyOn(csvLib, 'parseCsvFile').mockRejectedValueOnce(new Error('CSV is empty'))
+
+    const onComplete = vi.fn()
+    render(<UploadCsv onComplete={onComplete} />)
+
+    const file = new File([''], 'empty.csv', { type: 'text/csv' })
+    const input = screen.getByTestId('csv-input')
+    await userEvent.upload(input, file)
+
+    await waitFor(() => expect(screen.getByText('CSV is empty')).toBeInTheDocument())
+    expect(onComplete).not.toHaveBeenCalled()
   })
 })

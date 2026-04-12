@@ -34,7 +34,7 @@ export function AddMetrics({ headers, metrics, onUpdate, onContinue }: Props) {
       {metrics.length > 0 && (
         <div className="flex flex-col gap-2">
           {metrics.map((m, i) => (
-            <div key={i} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3">
+            <div key={m.name} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="font-medium text-slate-700 text-sm">{m.name}</span>
                 <span className={`text-xs rounded px-2 py-0.5 font-medium ${ROLE_COLORS[m.role]}`}>
