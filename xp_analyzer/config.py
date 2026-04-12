@@ -3,14 +3,7 @@ import yaml
 from xp_analyzer.models import ExperimentConfig, MetricConfig, MetricType, MetricRole, FilterBy
 
 
-def load_config(path: Path) -> ExperimentConfig:
-    path = Path(path)
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-
-    with path.open() as f:
-        data = yaml.safe_load(f)
-
+def load_config_dict(data: dict) -> ExperimentConfig:
     required = ["experiment_name", "group_column", "control_group", "metrics"]
     for key in required:
         if key not in data:
@@ -48,3 +41,12 @@ def load_config(path: Path) -> ExperimentConfig:
         significance_threshold=data.get("significance_threshold", 0.05),
         correction_method=data.get("correction_method", "bonferroni"),
     )
+
+
+def load_config(path: Path) -> ExperimentConfig:
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+    with path.open() as f:
+        data = yaml.safe_load(f)
+    return load_config_dict(data)
