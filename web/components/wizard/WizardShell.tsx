@@ -28,6 +28,7 @@ export function WizardShell() {
   function advance() {
     setState(s => ({
       ...s,
+      // step is bounded by STEPS.length (5), so the cast to the literal union is safe
       step: Math.min(s.step + 1, STEPS.length) as WizardState['step'],
       error: null,
     }))
