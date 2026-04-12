@@ -2,6 +2,11 @@
 import { useState } from 'react'
 import type { WizardState, ExperimentConfig } from '@/lib/types'
 import { StepIndicator } from './StepIndicator'
+import { UploadCsv } from './UploadCsv'
+import { ExperimentSetup } from './ExperimentSetup'
+import { AddMetrics } from './AddMetrics'
+import { ReviewRun } from './ReviewRun'
+import { ReportView } from '@/components/report/ReportView'
 
 const STEPS = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run', 'Results']
 
@@ -36,12 +41,50 @@ export function WizardShell() {
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-slate-800 mb-8">Experiment Analyzer</h1>
       <StepIndicator steps={STEPS} currentStep={state.step} />
+
       <div className="mt-6">
-        {state.step === 1 && <div data-testid="step-1-placeholder">Step 1: Upload CSV</div>}
-        {state.step === 2 && <div data-testid="step-2-placeholder">Step 2: Experiment Setup</div>}
-        {state.step === 3 && <div data-testid="step-3-placeholder">Step 3: Add Metrics</div>}
-        {state.step === 4 && <div data-testid="step-4-placeholder">Step 4: Review & Run</div>}
-        {state.step === 5 && <div data-testid="step-5-placeholder">Step 5: Results</div>}
+        {state.step === 1 && (
+          <UploadCsv
+            onComplete={csv => {
+              setState(s => ({ ...s, csv, step: 2 }))
+            }}
+          />
+        )}
+        {state.step === 2 && state.csv && (
+          <ExperimentSetup
+            headers={state.csv.headers}
+            csvFile={state.csv.file}
+            config={state.config}
+            onUpdate={updateConfig}
+            onContinue={advance}
+          />
+        )}
+        {state.step === 3 && state.csv && (
+          <AddMetrics
+            headers={state.csv.headers}
+            metrics={state.config.metrics ?? []}
+            onUpdate={metrics => updateConfig({ metrics })}
+            onContinue={advance}
+          />
+        )}
+        {state.step === 4 && state.csv && (
+          <ReviewRun
+            csv={state.csv}
+            config={state.config as ExperimentConfig}
+            error={state.error}
+            onResult={result => setState(s => ({ ...s, result, step: 5 }))}
+            onError={error => setState(s => ({ ...s, error }))}
+          />
+        )}
+        {state.step === 5 && state.result && (
+          <ReportView
+            result={state.result}
+            config={state.config as ExperimentConfig}
+            onRunAnother={() =>
+              setState({ step: 1, csv: null, config: DEFAULT_CONFIG, result: null, error: null })
+            }
+          />
+        )}
       </div>
     </div>
   )
