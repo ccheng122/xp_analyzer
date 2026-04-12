@@ -21,7 +21,11 @@ export function WizardShell() {
   })
 
   function advance() {
-    setState(s => ({ ...s, step: (s.step + 1) as WizardState['step'], error: null }))
+    setState(s => ({
+      ...s,
+      step: Math.min(s.step + 1, STEPS.length) as WizardState['step'],
+      error: null,
+    }))
   }
 
   function updateConfig(patch: Partial<ExperimentConfig>) {

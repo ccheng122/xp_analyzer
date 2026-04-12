@@ -13,7 +13,7 @@ export function StepIndicator({ steps, currentStep }: Props) {
         const isUpcoming = stepNum > currentStep
 
         return (
-          <div key={label} className="flex items-stretch gap-0">
+          <div key={stepNum} className="flex items-stretch gap-0">
             {/* Connector column */}
             <div className="flex flex-col items-center w-10 shrink-0">
               <div
