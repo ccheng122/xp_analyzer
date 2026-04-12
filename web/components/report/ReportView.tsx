@@ -49,7 +49,9 @@ export function ReportView({ result, config, onRunAnother }: Props) {
             const a = document.createElement('a')
             a.href = url
             a.download = `${result.experiment_name.replace(/\s+/g, '_')}_result.json`
+            document.body.appendChild(a)
             a.click()
+            document.body.removeChild(a)
             URL.revokeObjectURL(url)
           }}
         >

@@ -11,7 +11,7 @@ export function CiBar({ low, high, higherIsBetter }: Props) {
     ? isPositive ? 'bg-green-500' : isNegative ? 'bg-red-500' : 'bg-slate-400'
     : isNegative ? 'bg-green-500' : isPositive ? 'bg-red-500' : 'bg-slate-400'
 
-  const range = 0.05
+  const range = Math.max(Math.abs(low), Math.abs(high), 0.001) * 1.2
   const leftPct = Math.max(0, Math.min(100, ((low + range) / (2 * range)) * 100))
   const rightPct = Math.max(0, Math.min(100, ((high + range) / (2 * range)) * 100))
   const widthPct = Math.max(2, rightPct - leftPct)

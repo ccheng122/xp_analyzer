@@ -80,7 +80,9 @@ export function MetricCard({ result }: Props) {
         <div>
           <div className="text-xs text-slate-500 mb-0.5">p-value</div>
           <div className="font-bold text-slate-800">{formatPValue(result.p_value_corrected ?? result.p_value)}</div>
-          <div className="text-xs text-slate-400">corrected</div>
+          <div className="text-xs text-slate-400">
+            {result.p_value_corrected != null ? 'corrected' : 'raw'}
+          </div>
         </div>
       </div>
 

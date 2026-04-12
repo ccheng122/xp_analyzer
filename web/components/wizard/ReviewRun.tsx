@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExperimentConfig, ExperimentResult, ParsedCsv } from '@/lib/types'
 import { downloadYaml } from '@/lib/config-yaml'
 import { runAnalysis } from '@/lib/api'
@@ -15,18 +15,28 @@ interface Props {
 export function ReviewRun({ csv, config, error, onResult, onError }: Props) {
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   async function handleRun() {
     setLoading(true)
     setSlow(false)
-    const timer = setTimeout(() => setSlow(true), 3000)
+    timerRef.current = setTimeout(() => setSlow(true), 3000)
     try {
       const result = await runAnalysis(csv.file, config)
       onResult(result)
     } catch (e) {
       onError(e instanceof Error ? e.message : 'Analysis failed')
     } finally {
-      clearTimeout(timer)
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
       setLoading(false)
       setSlow(false)
     }
@@ -58,6 +68,7 @@ export function ReviewRun({ csv, config, error, onResult, onError }: Props) {
       </div>
 
       <button
+        type="button"
         className="w-full border border-slate-200 bg-white text-slate-600 rounded-md py-2 text-sm hover:bg-slate-50"
         onClick={() => downloadYaml(config)}
       >
@@ -65,6 +76,7 @@ export function ReviewRun({ csv, config, error, onResult, onError }: Props) {
       </button>
 
       <button
+        type="button"
         className="w-full bg-indigo-500 text-white rounded-md py-2 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-600 transition-colors"
         disabled={loading}
         onClick={handleRun}
