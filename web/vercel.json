@@ -1,7 +1,7 @@
 {
   "functions": {
-    "api/analyze.py": {
-      "runtime": "python3.11"
+    "api/**/*.py": {
+      "excludeFiles": "{tests/**,__tests__/**,**/*.test.py,**/test_*.py}"
     }
   }
 }
