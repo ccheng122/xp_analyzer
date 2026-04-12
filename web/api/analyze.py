@@ -1,8 +1,16 @@
 import json
 import math
+import traceback
 from flask import Flask, request, jsonify
+from werkzeug.exceptions import RequestEntityTooLarge
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_too_large(e):
+    return jsonify({'error': 'File too large (max 50 MB)'}), 413
 
 
 def _sanitize(obj):
@@ -46,9 +54,10 @@ def analyze():
         recommendation = generate_recommendation(findings, metric_results=metric_results)
 
         treatment_groups = [g for g in groups if g != config.control_group]
-        # Total users: sum the row count for the first metric across all groups
-        first_metric = config.metrics[0].name
-        total_users = sum(len(gd[first_metric]) for gd in groups.values())
+        # Total users: sum row counts safely without assuming metrics list is non-empty
+        total_users = sum(
+            len(next(iter(gd.values()))) for gd in groups.values() if gd
+        )
 
         result = ExperimentResult(
             experiment_name=config.experiment_name,
@@ -62,7 +71,8 @@ def analyze():
 
         return jsonify(_sanitize(result.to_dict()))
 
-    except (ValueError, KeyError) as e:
+    except (ValueError, KeyError, TypeError) as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': f'Analysis failed: {e}'}), 500
+        traceback.print_exc()  # logs to stderr
+        return jsonify({'error': 'Analysis failed: internal error'}), 500
