@@ -14,6 +14,7 @@ export function parseCsvFile(file: File): Promise<ParsedCsv> {
           headers = results.meta.fields ?? []
           if (headers.length === 0) {
             reject(new Error('CSV has no headers'))
+            return
           }
         }
         rowCount++

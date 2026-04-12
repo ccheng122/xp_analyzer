@@ -16,7 +16,7 @@ describe('parseCsvFile', () => {
 
   it('rejects on empty file', async () => {
     const file = makeFile('')
-    await expect(parseCsvFile(file)).rejects.toThrow()
+    await expect(parseCsvFile(file)).rejects.toThrow('CSV is empty')
   })
 })
 

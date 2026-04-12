@@ -22,5 +22,8 @@ export async function runAnalysis(
   }
 
   const data = await res.json()
+  if (!data || !data.metric_results) {
+    throw new Error('Unexpected response from analysis API')
+  }
   return data as ExperimentResult
 }

@@ -56,4 +56,18 @@ describe('configToYaml', () => {
     const yaml = configToYaml(simpleConfig)
     expect(yaml).not.toContain('filter_by')
   })
+
+  it('includes derive when set', () => {
+    const configWithDerive: ExperimentConfig = {
+      ...config,
+      metrics: [
+        {
+          ...config.metrics[0],
+          derive: 'not_null',
+        },
+      ],
+    }
+    const yaml = configToYaml(configWithDerive)
+    expect(yaml).toContain('derive: not_null')
+  })
 })

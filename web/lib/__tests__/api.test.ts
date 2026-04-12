@@ -16,6 +16,7 @@ const mockConfig: ExperimentConfig = {
 const mockResult: Partial<ExperimentResult> = {
   experiment_name: 'Test',
   recommendation: { decision: 'ship', rationale: 'Looks good', caveats: [] },
+  metric_results: [],
 }
 
 describe('runAnalysis', () => {
