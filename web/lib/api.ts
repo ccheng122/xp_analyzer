@@ -9,11 +9,18 @@ export async function runAnalysis(
   form.append('config', JSON.stringify(config))
 
   const res = await fetch('/api/analyze', { method: 'POST', body: form })
-  const data = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error ?? 'Analysis failed')
+    let message = 'Analysis failed'
+    try {
+      const data = await res.json()
+      if (data.error) message = data.error
+    } catch {
+      // non-JSON error body — use default message
+    }
+    throw new Error(message)
   }
 
+  const data = await res.json()
   return data as ExperimentResult
 }
