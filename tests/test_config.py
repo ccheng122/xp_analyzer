@@ -122,5 +122,5 @@ def test_load_config_dict_basic():
 
 
 def test_load_config_dict_missing_field():
-    with pytest.raises(ValueError, match="missing required field"):
+    with pytest.raises(ValueError, match="Config missing required field"):
         load_config_dict({"experiment_name": "x", "group_column": "g", "control_group": "0"})

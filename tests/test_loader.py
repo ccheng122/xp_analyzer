@@ -1,6 +1,7 @@
 import io
 import pytest
 from pathlib import Path
+from xp_analyzer.config import load_config_dict
 from xp_analyzer.loader import load_experiment_data
 from xp_analyzer.models import ExperimentConfig, MetricConfig, MetricType, MetricRole, FilterBy
 
@@ -136,7 +137,6 @@ def test_filter_by_unknown_condition_raises():
 def test_load_experiment_data_accepts_file_object(tmp_path):
     """load_experiment_data should accept a file-like object, not just a Path."""
     csv_content = "variant,converted\n0,1\n0,0\n1,1\n"
-    from xp_analyzer.config import load_config_dict
     config = load_config_dict({
         "experiment_name": "t",
         "group_column": "variant",
@@ -147,3 +147,5 @@ def test_load_experiment_data_accepts_file_object(tmp_path):
     groups = load_experiment_data(buf, config)
     assert "0" in groups
     assert "1" in groups
+    assert groups["0"]["conv"] == [1, 0]
+    assert groups["1"]["conv"] == [1]
