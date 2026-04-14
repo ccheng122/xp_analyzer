@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from xp_analyzer.config import load_config
+from xp_analyzer.config import load_config, load_config_dict
 from xp_analyzer.models import MetricType, MetricRole, FilterBy
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -96,3 +96,31 @@ def test_load_config_filter_by_missing_condition_key_raises(tmp_path):
     )
     with pytest.raises(ValueError, match="filter_by missing required key: 'condition'"):
         load_config(bad)
+
+
+def test_load_config_dict_basic():
+    data = {
+        "experiment_name": "Test Exp",
+        "group_column": "variant",
+        "control_group": "0",
+        "metrics": [
+            {
+                "name": "conversion",
+                "column": "converted",
+                "type": "binary",
+                "role": "primary",
+                "higher_is_better": True,
+            }
+        ],
+    }
+    config = load_config_dict(data)
+    assert config.experiment_name == "Test Exp"
+    assert config.control_group == "0"
+    assert len(config.metrics) == 1
+    assert config.metrics[0].type == MetricType.BINARY
+    assert config.metrics[0].role == MetricRole.PRIMARY
+
+
+def test_load_config_dict_missing_field():
+    with pytest.raises(ValueError, match="Config missing required field"):
+        load_config_dict({"experiment_name": "x", "group_column": "g", "control_group": "0"})

@@ -1,0 +1,137 @@
+<h2>Wizard Flow</h2>
+<p class="subtitle">5-step flow — all client-side state, no page navigation</p>
+
+<div class="section">
+  <div style="display:flex;align-items:center;gap:0;margin-bottom:32px;flex-wrap:wrap;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">1</div>
+      <span style="font-size:11px;color:#6366f1;font-weight:600;white-space:nowrap;">Upload CSV</span>
+    </div>
+    <div style="flex:1;height:2px;background:#6366f1;min-width:20px;margin-bottom:18px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">2</div>
+      <span style="font-size:11px;color:#6366f1;font-weight:600;white-space:nowrap;">Experiment Setup</span>
+    </div>
+    <div style="flex:1;height:2px;background:#e2e8f0;min-width:20px;margin-bottom:18px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">3</div>
+      <span style="font-size:11px;color:#94a3b8;font-weight:600;white-space:nowrap;">Add Metrics</span>
+    </div>
+    <div style="flex:1;height:2px;background:#e2e8f0;min-width:20px;margin-bottom:18px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">4</div>
+      <span style="font-size:11px;color:#94a3b8;font-weight:600;white-space:nowrap;">Review Config</span>
+    </div>
+    <div style="flex:1;height:2px;background:#e2e8f0;min-width:20px;margin-bottom:18px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">5</div>
+      <span style="font-size:11px;color:#94a3b8;font-weight:600;white-space:nowrap;">Results</span>
+    </div>
+  </div>
+
+  <!-- Step screens -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- Step 1 -->
+    <div class="mockup">
+      <div class="mockup-header">Step 1 — Upload CSV</div>
+      <div class="mockup-body" style="padding:16px;">
+        <div style="border:2px dashed #cbd5e1;border-radius:8px;padding:32px;text-align:center;background:#f8fafc;">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div style="font-weight:600;color:#334155;margin-bottom:4px;">Drop your CSV here</div>
+          <div style="font-size:12px;color:#94a3b8;">or click to browse</div>
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:#f1f5f9;border-radius:6px;font-size:12px;color:#475569;">
+          ✓ <strong>data.csv</strong> — 30,000 rows · 8 columns detected
+        </div>
+        <button class="mock-button" style="width:100%;margin-top:12px;">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="mockup">
+      <div class="mockup-header">Step 2 — Experiment Setup</div>
+      <div class="mockup-body" style="padding:16px;">
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;text-transform:uppercase;">Experiment Name</div>
+          <input class="mock-input" value="Free to Plus Upgrade" style="width:100%;box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;text-transform:uppercase;">Group Column</div>
+          <select class="mock-input" style="width:100%;box-sizing:border-box;">
+            <option>variant</option>
+            <option>group</option>
+            <option>treatment</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;text-transform:uppercase;">Control Group Value</div>
+          <select class="mock-input" style="width:100%;box-sizing:border-box;">
+            <option>0 (control)</option>
+            <option>1</option>
+          </select>
+        </div>
+        <button class="mock-button" style="width:100%;margin-top:4px;">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="mockup">
+      <div class="mockup-header">Step 3 — Add Metrics</div>
+      <div class="mockup-body" style="padding:16px;">
+        <!-- Existing metric -->
+        <div style="background:#f1f5f9;border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>paid_conversion</strong>
+              <span style="margin-left:8px;background:#dcfce7;color:#16a34a;border-radius:3px;padding:1px 5px;font-size:10px;">primary</span>
+            </div>
+            <span style="color:#94a3b8;cursor:pointer;">✕</span>
+          </div>
+          <div style="color:#64748b;margin-top:2px;">binary · higher is better</div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>paid_plan_canceled</strong>
+              <span style="margin-left:8px;background:#fee2e2;color:#dc2626;border-radius:3px;padding:1px 5px;font-size:10px;">guardrail</span>
+            </div>
+            <span style="color:#94a3b8;cursor:pointer;">✕</span>
+          </div>
+          <div style="color:#64748b;margin-top:2px;">binary · lower is better</div>
+        </div>
+        <button class="mock-button" style="width:100%;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;">+ Add Metric</button>
+        <button class="mock-button" style="width:100%;margin-top:8px;">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="mockup">
+      <div class="mockup-header">Step 4 — Review &amp; Run</div>
+      <div class="mockup-body" style="padding:16px;">
+        <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.6;">
+          <strong>Free to Plus Upgrade</strong><br/>
+          Group column: <code>variant</code> · Control: <code>0</code><br/>
+          2 metrics · Bonferroni correction · α=0.05
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;background:#f1f5f9;border-radius:6px;padding:8px 10px;font-size:11px;text-align:center;">
+            <div style="font-weight:700;color:#6366f1;font-size:16px;">2</div>
+            <div style="color:#64748b;">metrics</div>
+          </div>
+          <div style="flex:1;background:#f1f5f9;border-radius:6px;padding:8px 10px;font-size:11px;text-align:center;">
+            <div style="font-weight:700;color:#6366f1;font-size:16px;">30k</div>
+            <div style="color:#64748b;">users</div>
+          </div>
+        </div>
+        <button style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px;color:#475569;cursor:pointer;margin-bottom:8px;">⬇ Download config.yaml</button>
+        <button class="mock-button" style="width:100%;background:#6366f1;">▶ Run Analysis</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p style="text-align:center;font-size:13px;color:#94a3b8;margin-top:8px;">
+  Does this wizard flow look right? Any steps missing or need rethinking?
+</p>

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import IO, Union
 import pandas as pd
 from xp_analyzer.models import ExperimentConfig, FilterBy
 
@@ -12,7 +13,7 @@ def _apply_filter(df: pd.DataFrame, filter_by: FilterBy) -> pd.Series:
 
 
 def load_experiment_data(
-    csv_path: Path, config: ExperimentConfig
+    csv_path: Union[Path, IO[bytes]], config: ExperimentConfig
 ) -> dict[str, dict[str, list]]:
     """
     Returns: {group_name: {metric_name: [values]}}
