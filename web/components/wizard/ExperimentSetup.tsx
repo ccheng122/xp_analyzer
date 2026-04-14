@@ -13,12 +13,16 @@ interface Props {
 
 export function ExperimentSetup({ headers, csvFile, config, onUpdate, onContinue }: Props) {
   const [groupValues, setGroupValues] = useState<string[]>([])
+  const [loadingValues, setLoadingValues] = useState(false)
+  const [valuesError, setValuesError] = useState<string | null>(null)
 
   useEffect(() => {
     if (config.group_column) {
+      setLoadingValues(true)
+      setValuesError(null)
       getUniqueColumnValues(csvFile, config.group_column)
-        .then(setGroupValues)
-        .catch(() => setGroupValues([]))
+        .then(vals => { setGroupValues(vals); setLoadingValues(false) })
+        .catch(e => { setValuesError(e.message); setGroupValues([]); setLoadingValues(false) })
     }
   }, [csvFile, config.group_column])
 
@@ -63,11 +67,12 @@ export function ExperimentSetup({ headers, csvFile, config, onUpdate, onContinue
           className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           value={config.control_group ?? ''}
           onChange={e => onUpdate({ control_group: e.target.value })}
-          disabled={!config.group_column}
+          disabled={!config.group_column || loadingValues}
         >
-          <option value="">— select value —</option>
+          <option value="">{loadingValues ? '⏳ Loading…' : '— select value —'}</option>
           {groupValues.map(v => <option key={v} value={v}>{v}</option>)}
         </select>
+        {valuesError && <p className="text-xs text-red-500 mt-1">{valuesError}</p>}
       </div>
 
       <button

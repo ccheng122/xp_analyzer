@@ -35,17 +35,15 @@ export function parseCsvFile(file: File): Promise<ParsedCsv> {
 
 export function getUniqueColumnValues(file: File, column: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    const values = new Set<string>()
-
     Papa.parse(file, {
       header: true,
       preview: 2000,
       skipEmptyLines: true,
-      step(results) {
-        const row = results.data as Record<string, string>
-        if (row[column] != null) values.add(String(row[column]))
-      },
-      complete() {
+      complete(results) {
+        const values = new Set<string>()
+        for (const row of results.data as Record<string, string>[]) {
+          if (row[column] != null) values.add(String(row[column]))
+        }
         resolve([...values].sort())
       },
       error(err) {
