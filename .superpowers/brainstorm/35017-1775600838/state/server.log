@@ -1,9 +1,0 @@
-{"type":"server-started","port":53256,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:53256","screen_dir":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content","state_dir":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/state"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/wizard-flow.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/wizard-flow-v2.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/wizard-flow-v3.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/report-layouts.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/report-b-v2.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/add-metric-form.html"}
-{"type":"screen-added","file":"/Users/claracheng/Documents/Projects/xp_analyzer/.superpowers/brainstorm/35017-1775600838/content/waiting.html"}
-{"type":"server-stopped","reason":"idle timeout"}
