@@ -18,6 +18,7 @@ interface Props {
 
 export function AddMetrics({ headers, metrics, onUpdate, onContinue }: Props) {
   const [showForm, setShowForm] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const hasPrimary = metrics.some(m => m.role === 'primary')
 
   function handleAdd(metric: MetricConfig) {
@@ -25,49 +26,76 @@ export function AddMetrics({ headers, metrics, onUpdate, onContinue }: Props) {
     setShowForm(false)
   }
 
+  function handleSaveEdit(metric: MetricConfig) {
+    onUpdate(metrics.map((m, i) => (i === editingIndex ? metric : m)))
+    setEditingIndex(null)
+  }
+
   function handleRemove(index: number) {
     onUpdate(metrics.filter((_, i) => i !== index))
   }
+
+  const formOpen = showForm || editingIndex !== null
 
   return (
     <div className="flex flex-col gap-4">
       {metrics.length > 0 && (
         <div className="flex flex-col gap-2">
           {metrics.map((m, i) => (
-            <div key={m.name} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3">
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-slate-700 text-sm">{m.name}</span>
-                <span className={`text-xs rounded px-2 py-0.5 font-medium ${ROLE_COLORS[m.role]}`}>
-                  {m.role}
-                </span>
-                <span className="text-xs text-slate-400">{m.type}</span>
-              </div>
-              <button
-                aria-label="Remove"
-                className="text-xs text-red-400 hover:text-red-600"
-                onClick={() => handleRemove(i)}
-              >
-                Remove
-              </button>
+            <div key={m.name}>
+              {editingIndex === i ? (
+                <MetricForm
+                  headers={headers}
+                  initialValues={m}
+                  onAdd={handleSaveEdit}
+                  onCancel={() => setEditingIndex(null)}
+                />
+              ) : (
+                <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-slate-700 text-sm">{m.name}</span>
+                    <span className={`text-xs rounded px-2 py-0.5 font-medium ${ROLE_COLORS[m.role]}`}>
+                      {m.role}
+                    </span>
+                    <span className="text-xs text-slate-400">{m.type}</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      aria-label="Edit"
+                      className="text-xs text-indigo-400 hover:text-indigo-600"
+                      onClick={() => { setShowForm(false); setEditingIndex(i) }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      aria-label="Remove"
+                      className="text-xs text-red-400 hover:text-red-600"
+                      onClick={() => handleRemove(i)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {!showForm ? (
+      {!formOpen ? (
         <button
           className="border border-dashed border-slate-300 rounded-lg py-3 text-sm text-slate-500 hover:border-indigo-300 hover:text-indigo-500 transition-colors"
           onClick={() => setShowForm(true)}
         >
           + Add Metric
         </button>
-      ) : (
+      ) : showForm ? (
         <MetricForm
           headers={headers}
           onAdd={handleAdd}
           onCancel={() => setShowForm(false)}
         />
-      )}
+      ) : null}
 
       {!hasPrimary && (
         <p className="text-xs text-amber-600">At least one primary metric is required.</p>

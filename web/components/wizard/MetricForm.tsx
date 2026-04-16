@@ -4,19 +4,20 @@ import type { MetricConfig, MetricType, MetricRole } from '@/lib/types'
 
 interface Props {
   headers: string[]
+  initialValues?: MetricConfig
   onAdd: (metric: MetricConfig) => void
   onCancel: () => void
 }
 
-export function MetricForm({ headers, onAdd, onCancel }: Props) {
-  const [name, setName] = useState('')
-  const [column, setColumn] = useState('')
-  const [type, setType] = useState<MetricType>('binary')
-  const [role, setRole] = useState<MetricRole>('primary')
-  const [higherIsBetter, setHigherIsBetter] = useState(true)
-  const [derive, setDerive] = useState<'not_null' | ''>('')
-  const [filterCol, setFilterCol] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
+export function MetricForm({ headers, initialValues, onAdd, onCancel }: Props) {
+  const [name, setName] = useState(initialValues?.name ?? '')
+  const [column, setColumn] = useState(initialValues?.column ?? '')
+  const [type, setType] = useState<MetricType>(initialValues?.type ?? 'binary')
+  const [role, setRole] = useState<MetricRole>(initialValues?.role ?? 'primary')
+  const [higherIsBetter, setHigherIsBetter] = useState(initialValues?.higher_is_better ?? true)
+  const [derive, setDerive] = useState<'not_null' | ''>((initialValues?.derive as 'not_null' | null) ?? '')
+  const [filterCol, setFilterCol] = useState(initialValues?.filter_by?.column ?? '')
+  const [showAdvanced, setShowAdvanced] = useState(!!(initialValues?.derive || initialValues?.filter_by))
 
   const isValid = name.trim() !== '' && column !== ''
 
@@ -160,7 +161,7 @@ export function MetricForm({ headers, onAdd, onCancel }: Props) {
           disabled={!isValid}
           onClick={handleAdd}
         >
-          Add Metric
+          {initialValues ? 'Save Changes' : 'Add Metric'}
         </button>
       </div>
     </div>
