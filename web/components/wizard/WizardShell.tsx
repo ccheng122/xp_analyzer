@@ -24,14 +24,20 @@ export function WizardShell() {
     result: null,
     error: null,
   })
+  const [highestStep, setHighestStep] = useState(1)
 
   function advance() {
-    setState(s => ({
-      ...s,
-      // step is bounded by STEPS.length (5), so the cast to the literal union is safe
-      step: Math.min(s.step + 1, STEPS.length) as WizardState['step'],
-      error: null,
-    }))
+    setState(s => {
+      const next = Math.min(s.step + 1, STEPS.length) as WizardState['step']
+      setHighestStep(h => Math.max(h, next))
+      return { ...s, step: next, error: null }
+    })
+  }
+
+  function goToStep(step: number) {
+    // Never go back to step 1 (would require re-uploading CSV); only navigate within reached steps
+    if (step < 2 || step > highestStep) return
+    setState(s => ({ ...s, step: step as WizardState['step'], error: null }))
   }
 
   function updateConfig(patch: Partial<ExperimentConfig>) {
@@ -41,7 +47,7 @@ export function WizardShell() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-slate-800 mb-8">Experiment Analyzer</h1>
-      <StepIndicator steps={STEPS} currentStep={state.step} />
+      <StepIndicator steps={STEPS} currentStep={state.step} onStepClick={state.csv ? goToStep : undefined} />
 
       <div className="mt-6">
         {state.step === 1 && (

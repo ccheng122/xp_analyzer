@@ -1,9 +1,10 @@
 interface Props {
   steps: string[]
   currentStep: number // 1-indexed
+  onStepClick?: (step: number) => void
 }
 
-export function StepIndicator({ steps, currentStep }: Props) {
+export function StepIndicator({ steps, currentStep, onStepClick }: Props) {
   return (
     <div className="flex flex-col gap-0">
       {steps.map((label, i) => {
@@ -11,16 +12,22 @@ export function StepIndicator({ steps, currentStep }: Props) {
         const isCompleted = stepNum < currentStep
         const isActive = stepNum === currentStep
         const isUpcoming = stepNum > currentStep
+        const isClickable = isCompleted && !!onStepClick
 
         return (
           <div key={stepNum} className="flex items-stretch gap-0">
             {/* Connector column */}
             <div className="flex flex-col items-center w-10 shrink-0">
               <div
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onClick={isClickable ? () => onStepClick(stepNum) : undefined}
+                onKeyDown={isClickable ? e => e.key === 'Enter' && onStepClick(stepNum) : undefined}
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0
                   ${isCompleted ? 'bg-green-500 text-white' : ''}
                   ${isActive ? 'bg-indigo-500 text-white ring-4 ring-indigo-100' : ''}
                   ${isUpcoming ? 'bg-slate-200 text-slate-400' : ''}
+                  ${isClickable ? 'cursor-pointer hover:bg-green-600 transition-colors' : ''}
                 `}
               >
                 {isCompleted ? '✓' : stepNum}
