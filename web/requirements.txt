@@ -1,2 +1,3 @@
 flask>=3.0
+pandas>=2.0
 xp-analyzer @ git+https://github.com/ccheng122/xp_analyzer.git@master
