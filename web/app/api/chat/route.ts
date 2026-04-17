@@ -1,5 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic'
 import { streamText, tool, stepCountIs } from 'ai'
+import type { ModelMessage } from 'ai'
 import { z } from 'zod'
 import type { ExperimentResult, MetricResult } from '@/lib/types'
 
@@ -11,10 +12,12 @@ export function buildSystemPrompt(result: ExperimentResult): string {
   const metrics = result.metric_results
     .map((m: MetricResult) =>
       `  - ${m.metric_name} (${m.metric_role}, ${m.metric_type}): ` +
-      `control=${formatMean(m.control_mean, m.metric_type)}, ` +
-      `treatment=${formatMean(m.treatment_mean, m.metric_type)}, ` +
+      `control=${formatMean(m.control_mean, m.metric_type)} (n=${m.control_n.toLocaleString()}), ` +
+      `treatment=${formatMean(m.treatment_mean, m.metric_type)} (n=${m.treatment_n.toLocaleString()}), ` +
       `relative_lift=${(m.relative_lift * 100).toFixed(1)}%, ` +
-      `p=${m.p_value.toFixed(6)}, ` +
+      `absolute_lift=${(m.absolute_lift * 100).toFixed(2)}pp, ` +
+      `p=${m.p_value.toFixed(6)}${m.p_value_corrected != null ? ` (corrected: ${m.p_value_corrected.toFixed(6)})` : ''}, ` +
+      `CI=[${(m.confidence_interval_low * 100).toFixed(2)}pp, ${(m.confidence_interval_high * 100).toFixed(2)}pp], ` +
       `significant=${m.is_significant}`
     )
     .join('\n')
@@ -47,7 +50,9 @@ Guidelines:
 
 function getInternalApiUrl(): string {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return 'http://localhost:5001'
+  // In development, route handlers run server-side and bypass Next.js rewrites,
+  // so we call Flask directly rather than going through the dev proxy.
+  return process.env.FLASK_URL ?? 'http://localhost:5001'
 }
 
 export async function POST(req: Request) {
@@ -63,8 +68,17 @@ export async function POST(req: Request) {
     })
   }
 
-  const messages = JSON.parse(messagesRaw as string)
-  const result: ExperimentResult = JSON.parse(resultRaw as string)
+  let messages: ModelMessage[]
+  let result: ExperimentResult
+  try {
+    messages = JSON.parse(messagesRaw as string) as ModelMessage[]
+    result = JSON.parse(resultRaw as string) as ExperimentResult
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON in messages or result' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
   const csvFile = formData.get('csv') as File | null
 
   const response = streamText({
@@ -106,7 +120,10 @@ export async function POST(req: Request) {
             return `Subgroup analysis failed: ${err.error}`
           }
           const data = await res.json()
-          return data.table as string
+          if (typeof data.table !== 'string') {
+            return 'Subgroup analysis returned an unexpected response.'
+          }
+          return data.table
         },
       }),
     },

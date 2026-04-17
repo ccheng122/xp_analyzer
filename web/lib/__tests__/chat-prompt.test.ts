@@ -76,4 +76,31 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('7.96%')
     expect(prompt).toContain('9.66%')
   })
+
+  it('formats continuous metric means as raw numbers', () => {
+    const continuousResult: ExperimentResult = {
+      ...result,
+      metric_results: [{
+        ...result.metric_results[0],
+        metric_name: 'revenue',
+        metric_type: 'continuous',
+        control_mean: 42.5678,
+        treatment_mean: 45.1234,
+      }],
+    }
+    const prompt = buildSystemPrompt(continuousResult)
+    expect(prompt).toContain('42.5678')
+    expect(prompt).toContain('45.1234')
+  })
+
+  it('includes sample sizes in prompt', () => {
+    const prompt = buildSystemPrompt(result)
+    expect(prompt).toContain('20,000')
+    expect(prompt).toContain('10,000')
+  })
+
+  it('includes confidence interval in prompt', () => {
+    const prompt = buildSystemPrompt(result)
+    expect(prompt).toContain('CI=[')
+  })
 })
