@@ -117,3 +117,65 @@ def test_subgroup_metric_column_not_in_csv(client):
     )
     assert response.status_code == 400
     assert 'not found' in response.get_json()['error']
+
+
+def test_subgroup_too_many_groups(client):
+    csv_with_51_groups = "group,value\n" + "\n".join([f"{i},1.0" for i in range(51)])
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(csv_with_51_groups.encode()), 'data.csv'),
+            'group_column': 'group',
+            'metric_columns': json.dumps(['value']),
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+    assert 'Too many' in response.get_json()['error']
+
+
+def test_subgroup_invalid_aggregation(client):
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(CSV.encode()), 'data.csv'),
+            'group_column': 'group',
+            'metric_columns': json.dumps(['value']),
+            'aggregation': 'invalid',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+    assert 'aggregation must be' in response.get_json()['error']
+
+
+def test_subgroup_missing_metric_columns(client):
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(CSV.encode()), 'data.csv'),
+            'group_column': 'group',
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+    assert 'error' in response.get_json()
+
+
+def test_subgroup_multiple_metrics(client):
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(CSV.encode()), 'data.csv'),
+            'group_column': 'group',
+            'metric_columns': json.dumps(['value', 'other']),
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'value' in data['table']
+    assert 'other' in data['table']

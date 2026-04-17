@@ -38,6 +38,9 @@ def subgroup():
     except json.JSONDecodeError:
         return jsonify({'error': 'Invalid metric_columns JSON'}), 400
 
+    if not isinstance(metric_columns, list):
+        return jsonify({'error': 'metric_columns must be a JSON array'}), 400
+
     if aggregation not in ('mean', 'count', 'sum'):
         return jsonify({'error': "aggregation must be 'mean', 'count', or 'sum'"}), 400
 
