@@ -1,5 +1,5 @@
 import { anthropic } from '@ai-sdk/anthropic'
-import { streamText, tool } from 'ai'
+import { streamText, tool, stepCountIs } from 'ai'
 import { z } from 'zod'
 import type { ExperimentResult, MetricResult } from '@/lib/types'
 
@@ -71,12 +71,12 @@ export async function POST(req: Request) {
     model: anthropic('claude-sonnet-4-6'),
     system: buildSystemPrompt(result),
     messages,
-    maxSteps: 3,
+    stopWhen: stepCountIs(3),
     tools: {
       run_subgroup_analysis: tool({
         description:
           'Run a groupby aggregation on the experiment CSV to answer a subgroup question. Use when the user asks about breakdowns by a column.',
-        parameters: z.object({
+        inputSchema: z.object({
           group_column: z.string().describe('Column name to group by'),
           metric_columns: z.array(z.string()).describe('Column names to aggregate'),
           aggregation: z
@@ -112,5 +112,5 @@ export async function POST(req: Request) {
     },
   })
 
-  return response.toDataStreamResponse()
+  return response.toTextStreamResponse()
 }
