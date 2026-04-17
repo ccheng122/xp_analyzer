@@ -1,2 +1,2 @@
 flask>=3.0
-xp-analyzer @ git+https://github.com/ccheng122/xp_analyzer.git@main
+xp-analyzer @ git+https://github.com/ccheng122/xp_analyzer.git@master
