@@ -87,6 +87,7 @@ export function WizardShell() {
           <ReportView
             result={state.result}
             config={state.config as ExperimentConfig}
+            csvFile={state.csv?.file}
             onRunAnother={() =>
               setState({ step: 1, csv: null, config: DEFAULT_CONFIG, result: null, error: null })
             }

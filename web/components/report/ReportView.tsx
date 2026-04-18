@@ -3,14 +3,16 @@ import { RecommendationBanner } from './RecommendationBanner'
 import { StatsBar } from './StatsBar'
 import { MetricCard } from './MetricCard'
 import { CaveatsBlock } from './CaveatsBlock'
+import { ChatPanel } from './ChatPanel'
 
 interface Props {
   result: ExperimentResult
   config?: ExperimentConfig
+  csvFile?: File
   onRunAnother: () => void
 }
 
-export function ReportView({ result, config, onRunAnother }: Props) {
+export function ReportView({ result, config, csvFile, onRunAnother }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <RecommendationBanner
@@ -64,6 +66,8 @@ export function ReportView({ result, config, onRunAnother }: Props) {
           ← Run Another
         </button>
       </div>
+
+      {csvFile && <ChatPanel result={result} csvFile={csvFile} />}
     </div>
   )
 }

@@ -4,6 +4,24 @@ import userEvent from '@testing-library/user-event'
 import { ReportView } from '../report/ReportView'
 import type { ExperimentResult } from '@/lib/types'
 
+vi.mock('@ai-sdk/react', () => ({
+  useChat: vi.fn(() => ({
+    messages: [],
+    input: '',
+    sendMessage: vi.fn(),
+    status: 'ready',
+    error: undefined,
+  })),
+}))
+
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>()
+  return {
+    ...actual,
+    DefaultChatTransport: vi.fn().mockImplementation(() => ({})),
+  }
+})
+
 const result: ExperimentResult = {
   experiment_name: 'Test Exp',
   control_group: '0',
