@@ -1,6 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic'
-import { streamText, tool, stepCountIs } from 'ai'
-import type { ModelMessage } from 'ai'
+import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai'
+import type { UIMessage } from 'ai'
 import { z } from 'zod'
 import type { ExperimentResult, MetricResult } from '@/lib/types'
 
@@ -68,10 +68,10 @@ export async function POST(req: Request) {
     })
   }
 
-  let messages: ModelMessage[]
+  let messages: UIMessage[]
   let result: ExperimentResult
   try {
-    messages = JSON.parse(messagesRaw as string) as ModelMessage[]
+    messages = JSON.parse(messagesRaw as string) as UIMessage[]
     result = JSON.parse(resultRaw as string) as ExperimentResult
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON in messages or result' }), {
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
   const response = streamText({
     model: anthropic('claude-sonnet-4-6'),
     system: buildSystemPrompt(result),
-    messages,
+    messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(3),
     tools: {
       run_subgroup_analysis: tool({
@@ -129,5 +129,5 @@ export async function POST(req: Request) {
     },
   })
 
-  return response.toTextStreamResponse()
+  return response.toUIMessageStreamResponse()
 }
