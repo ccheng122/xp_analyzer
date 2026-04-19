@@ -8,7 +8,7 @@ function formatMean(mean: number, type: string): string {
   return type === 'binary' ? `${(mean * 100).toFixed(2)}%` : mean.toFixed(4)
 }
 
-export function buildSystemPrompt(result: ExperimentResult): string {
+export function buildSystemPrompt(result: ExperimentResult, csvColumns?: string[]): string {
   const metrics = result.metric_results
     .map((m: MetricResult) =>
       `  - ${m.metric_name} (${m.metric_role}, ${m.metric_type}): ` +
@@ -40,10 +40,13 @@ ${findings}
 Recommendation: ${result.recommendation.decision} — ${result.recommendation.rationale}
 Caveats: ${result.recommendation.caveats.join('; ')}
 
+CSV columns available for subgroup analysis: ${csvColumns && csvColumns.length > 0 ? csvColumns.join(', ') : 'unknown (CSV not provided)'}
+
 Guidelines:
 - Answer from the results above when possible.
-- Use the run_subgroup_analysis tool when the user asks about breakdowns by a column (e.g. day of week, platform, timezone).
-- If a question requires data that is not in the results and cannot be derived from the CSV columns, explicitly say: "To answer that I'd need [specific data] which wasn't in your CSV."
+- Use the run_subgroup_analysis tool when the user asks about breakdowns by a column.
+- For date columns, you can derive day-of-week, week, month, or year — pass dayofweek(col), week(col), month(col), or year(col) as the group_column.
+- If a question requires data not in the results and not derivable from the CSV columns above, say: "To answer that I'd need [specific data] which wasn't in your CSV."
 - Never guess or hallucinate statistics. If uncertain, say so.
 - Format responses clearly using markdown. Use tables for numeric comparisons.`
 }
@@ -81,9 +84,19 @@ export async function POST(req: Request) {
   }
   const csvFile = formData.get('csv') as File | null
 
+  let csvColumns: string[] = []
+  if (csvFile) {
+    try {
+      const firstLine = (await csvFile.text()).split('\n')[0]
+      csvColumns = firstLine.split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+    } catch {
+      // non-fatal — system prompt will say columns are unknown
+    }
+  }
+
   const response = streamText({
     model: anthropic('claude-sonnet-4-6'),
-    system: buildSystemPrompt(result),
+    system: buildSystemPrompt(result, csvColumns),
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(3),
     tools: {

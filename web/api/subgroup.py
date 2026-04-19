@@ -49,7 +49,28 @@ def subgroup():
     except Exception as e:
         return jsonify({'error': f'Failed to read CSV: {str(e)}'}), 400
 
-    if group_column not in df.columns:
+    # Support derived date columns: dayofweek(col), week(col), month(col), year(col)
+    DATE_DERIVATIONS = {
+        'dayofweek': lambda s: pd.to_datetime(s).dt.day_name(),
+        'week':      lambda s: pd.to_datetime(s).dt.isocalendar().week.astype(str),
+        'month':     lambda s: pd.to_datetime(s).dt.strftime('%B'),
+        'year':      lambda s: pd.to_datetime(s).dt.year.astype(str),
+    }
+    derived_label = None
+    for fn_name, fn in DATE_DERIVATIONS.items():
+        prefix = f'{fn_name}('
+        if group_column.startswith(prefix) and group_column.endswith(')'):
+            source_col = group_column[len(prefix):-1]
+            if source_col not in df.columns:
+                return jsonify({'error': f"Column '{source_col}' not found in CSV"}), 400
+            try:
+                df[group_column] = fn(df[source_col])
+            except Exception:
+                return jsonify({'error': f"Could not parse '{source_col}' as dates"}), 400
+            derived_label = group_column
+            break
+
+    if derived_label is None and group_column not in df.columns:
         return jsonify({'error': f"Column '{group_column}' not found in CSV"}), 400
 
     missing = [c for c in metric_columns if c not in df.columns]
