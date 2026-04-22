@@ -86,7 +86,7 @@ export function ChatPanel({ result, csvFile }: ChatPanelProps) {
         {error && (
           <div className="flex justify-center">
             <div className="bg-red-50 text-red-600 rounded-lg px-4 py-2 text-sm">
-              Something went wrong. Please try again.
+              Something went wrong: {error.message || String(error)}
             </div>
           </div>
         )}
