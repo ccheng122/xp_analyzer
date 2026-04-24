@@ -50,11 +50,17 @@ def subgroup():
         return jsonify({'error': f'Failed to read CSV: {str(e)}'}), 400
 
     # Support derived date columns: dayofweek(col), week(col), month(col), year(col)
+    def _parse_dates(s):
+        try:
+            return pd.to_datetime(s, errors='coerce')
+        except Exception:
+            return pd.to_datetime(s, format='mixed', errors='coerce')
+
     DATE_DERIVATIONS = {
-        'dayofweek': lambda s: pd.to_datetime(s).dt.day_name(),
-        'week':      lambda s: pd.to_datetime(s).dt.isocalendar().week.astype(str),
-        'month':     lambda s: pd.to_datetime(s).dt.strftime('%B'),
-        'year':      lambda s: pd.to_datetime(s).dt.year.astype(str),
+        'dayofweek': lambda s: _parse_dates(s).dt.day_name(),
+        'week':      lambda s: _parse_dates(s).dt.isocalendar().week.astype(str),
+        'month':     lambda s: _parse_dates(s).dt.strftime('%B'),
+        'year':      lambda s: _parse_dates(s).dt.year.astype(str),
     }
     derived_label = None
     for fn_name, fn in DATE_DERIVATIONS.items():
@@ -64,9 +70,12 @@ def subgroup():
             if source_col not in df.columns:
                 return jsonify({'error': f"Column '{source_col}' not found in CSV"}), 400
             try:
-                df[group_column] = fn(df[source_col])
-            except Exception:
-                return jsonify({'error': f"Could not parse '{source_col}' as dates"}), 400
+                derived = fn(df[source_col])
+                if derived.isna().all():
+                    return jsonify({'error': f"Could not parse any values in '{source_col}' as dates. Sample values: {df[source_col].dropna().head(3).tolist()}"}), 400
+                df[group_column] = derived
+            except Exception as e:
+                return jsonify({'error': f"Could not parse '{source_col}' as dates: {str(e)}. Sample values: {df[source_col].dropna().head(3).tolist()}"}), 400
             derived_label = group_column
             break
 
