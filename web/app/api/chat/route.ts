@@ -2,13 +2,13 @@ import { anthropic } from '@ai-sdk/anthropic'
 import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai'
 import type { UIMessage } from 'ai'
 import { z } from 'zod'
-import type { ExperimentResult, MetricResult } from '@/lib/types'
+import type { ExperimentConfig, ExperimentResult, MetricResult } from '@/lib/types'
 
 function formatMean(mean: number, type: string): string {
   return type === 'binary' ? `${(mean * 100).toFixed(2)}%` : mean.toFixed(4)
 }
 
-export function buildSystemPrompt(result: ExperimentResult, csvColumns?: string[]): string {
+export function buildSystemPrompt(result: ExperimentResult, csvColumns?: string[], config?: ExperimentConfig): string {
   const metrics = result.metric_results
     .map((m: MetricResult) =>
       `  - ${m.metric_name} (${m.metric_role}, ${m.metric_type}): ` +
@@ -41,6 +41,9 @@ Recommendation: ${result.recommendation.decision} — ${result.recommendation.ra
 Caveats: ${result.recommendation.caveats.join('; ')}
 
 CSV columns available for subgroup analysis: ${csvColumns && csvColumns.length > 0 ? csvColumns.join(', ') : 'unknown (CSV not provided)'}
+${config?.metrics ? `
+Metric → CSV column mapping (IMPORTANT: use CSV column names, not metric names, in subgroup analysis):
+${config.metrics.map(m => `  - metric "${m.name}" → CSV column "${m.column}"${m.derive === 'not_null' ? ` (derived: 1 if ${m.column} is not null, 0 otherwise — use aggregation "not_null_rate" on "${m.column}")` : ''}`).join('\n')}` : ''}
 
 Guidelines:
 - Answer from the results above when possible.
@@ -82,6 +85,11 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  const configRaw = formData.get('config')
+  let config: ExperimentConfig | undefined
+  if (configRaw) {
+    try { config = JSON.parse(configRaw as string) as ExperimentConfig } catch { /* optional */ }
+  }
   const csvFile = formData.get('csv') as File | null
 
   let csvColumns: string[] = []
@@ -96,7 +104,7 @@ export async function POST(req: Request) {
 
   const response = streamText({
     model: anthropic('claude-sonnet-4-6'),
-    system: buildSystemPrompt(result, csvColumns),
+    system: buildSystemPrompt(result, csvColumns, config),
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(3),
     tools: {
@@ -107,8 +115,8 @@ export async function POST(req: Request) {
           group_column: z.string().describe('Column name to group by'),
           metric_columns: z.array(z.string()).describe('Column names to aggregate'),
           aggregation: z
-            .enum(['mean', 'count', 'sum'])
-            .describe('Aggregation function to apply'),
+            .enum(['mean', 'count', 'sum', 'not_null_rate'])
+            .describe('Aggregation function. Use not_null_rate for derived metrics based on not_null.'),
         }),
         execute: async ({ group_column, metric_columns, aggregation }) => {
           if (!csvFile) {

@@ -67,7 +67,7 @@ export function ReportView({ result, config, csvFile, onRunAnother }: Props) {
         </button>
       </div>
 
-      {csvFile && <ChatPanel result={result} csvFile={csvFile} />}
+      {csvFile && <ChatPanel result={result} csvFile={csvFile} config={config} />}
     </div>
   )
 }

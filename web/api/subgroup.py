@@ -41,8 +41,8 @@ def subgroup():
     if not isinstance(metric_columns, list):
         return jsonify({'error': 'metric_columns must be a JSON array'}), 400
 
-    if aggregation not in ('mean', 'count', 'sum'):
-        return jsonify({'error': "aggregation must be 'mean', 'count', or 'sum'"}), 400
+    if aggregation not in ('mean', 'count', 'sum', 'not_null_rate'):
+        return jsonify({'error': "aggregation must be 'mean', 'count', 'sum', or 'not_null_rate'"}), 400
 
     try:
         df = pd.read_csv(io.BytesIO(request.files['csv'].read()))
@@ -89,7 +89,10 @@ def subgroup():
     if df[group_column].nunique() > 50:
         return jsonify({'error': f"Too many unique values in '{group_column}' (max 50)"}), 400
 
-    grouped = df.groupby(group_column)[metric_columns].agg(aggregation).round(4)
+    if aggregation == 'not_null_rate':
+        grouped = df.groupby(group_column)[metric_columns].apply(lambda x: x.notna().mean()).round(4)
+    else:
+        grouped = df.groupby(group_column)[metric_columns].agg(aggregation).round(4)
     table = _df_to_markdown(grouped)
 
     return jsonify({'table': table})

@@ -4,14 +4,15 @@ import { useRef, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import ReactMarkdown from 'react-markdown'
-import type { ExperimentResult } from '@/lib/types'
+import type { ExperimentConfig, ExperimentResult } from '@/lib/types'
 
 interface ChatPanelProps {
   result: ExperimentResult
   csvFile: File
+  config?: ExperimentConfig
 }
 
-export function ChatPanel({ result, csvFile }: ChatPanelProps) {
+export function ChatPanel({ result, csvFile, config }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
 
@@ -23,6 +24,7 @@ export function ChatPanel({ result, csvFile }: ChatPanelProps) {
         const formData = new FormData()
         formData.append('messages', JSON.stringify(body.messages))
         formData.append('result', JSON.stringify(result))
+        if (config) formData.append('config', JSON.stringify(config))
         formData.append('csv', csvFile)
         return fetch(url, { method: 'POST', body: formData })
       },
