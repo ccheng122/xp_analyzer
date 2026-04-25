@@ -54,11 +54,14 @@ Guidelines:
 - Format responses clearly using markdown. Use tables for numeric comparisons.`
 }
 
-function getInternalApiUrl(): string {
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  // In development, route handlers run server-side and bypass Next.js rewrites,
-  // so we call Flask directly rather than going through the dev proxy.
-  return process.env.FLASK_URL ?? 'http://localhost:5001'
+function getSubgroupUrl(): string {
+  // Explicit override always wins (local dev or custom deploy)
+  if (process.env.FLASK_SUBGROUP_URL) return `${process.env.FLASK_SUBGROUP_URL}/api/subgroup`
+  // On Vercel production/preview, call the co-deployed Python function
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/subgroup`
+  // Fallback for local dev without explicit config
+  const base = process.env.FLASK_URL ?? 'http://localhost:5002'
+  return `${base}/api/subgroup`
 }
 
 export async function POST(req: Request) {
@@ -129,7 +132,7 @@ export async function POST(req: Request) {
           subgroupForm.append('aggregation', aggregation)
           let res: Response
           try {
-            res = await fetch(`${getInternalApiUrl()}/api/subgroup`, {
+            res = await fetch(getSubgroupUrl(), {
               method: 'POST',
               body: subgroupForm,
             })
@@ -137,8 +140,13 @@ export async function POST(req: Request) {
             return 'Subgroup analysis service is unavailable.'
           }
           if (!res.ok) {
-            const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-            return `Subgroup analysis failed: ${err.error}`
+            const text = await res.text()
+            try {
+              const err = JSON.parse(text) as { error?: string }
+              return `Subgroup analysis failed: ${err.error ?? text.slice(0, 200)}`
+            } catch {
+              return `Subgroup analysis failed (${res.status}): ${text.slice(0, 200)}`
+            }
           }
           const data = await res.json()
           if (typeof data.table !== 'string') {
