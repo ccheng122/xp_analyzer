@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-page);
+  --foreground: var(--color-text);
 }
 
 @theme inline {
@@ -10,17 +10,51 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-page: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F8FAFC;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-text: #0F172A;
+  --color-muted: #64748B;
+  --color-faint: #94A3B8;
+
+  --color-success: #16A34A;
+  --color-success-bg: #DCFCE7;
+  --color-success-fg: #166534;
+
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEE2E2;
+  --color-danger-fg: #991B1B;
+
+  --color-warning: #C2410C;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  --text-display: 22px;
+  --text-section: 14px;
+  --text-body: 13px;
+  --text-label: 12px;
+  --text-meta: 11px;
+  --text-axis: 10px;
+
+  --leading-display: 1.2;
+  --leading-tight: 1.4;
+  --leading-body: 1.6;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+
+  --spacing-card-x: 14px;
+  --spacing-card-y: 12px;
+  --spacing-ci-bar: 22px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }

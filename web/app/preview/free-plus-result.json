@@ -1,0 +1,69 @@
+{
+  "experiment_name": "Free to Plus Upgrade Experiment",
+  "control_group": "0",
+  "treatment_groups": [
+    "1"
+  ],
+  "total_users": 30000,
+  "metric_results": [
+    {
+      "metric_name": "paid_conversion",
+      "metric_type": "binary",
+      "metric_role": "primary",
+      "higher_is_better": true,
+      "control_mean": 0.0796,
+      "treatment_mean": 0.0966,
+      "relative_lift": 0.2135678391959799,
+      "absolute_lift": 0.017,
+      "p_value": 6.691336513614653e-07,
+      "p_value_corrected": 6.691336513614653e-07,
+      "confidence_interval_low": 0.010100901341653392,
+      "confidence_interval_high": 0.02389909865834661,
+      "effect_size": 1.2135678391959799,
+      "is_significant": true,
+      "control_n": 20000,
+      "treatment_n": 10000
+    },
+    {
+      "metric_name": "paid_plan_canceled",
+      "metric_type": "binary",
+      "metric_role": "guardrail",
+      "higher_is_better": false,
+      "control_mean": 0.03975,
+      "treatment_mean": 0.0487,
+      "relative_lift": 0.2251572327044025,
+      "absolute_lift": 0.00895,
+      "p_value": 0.00030258154372830745,
+      "p_value_corrected": 0.00030258154372830745,
+      "confidence_interval_low": 0.003937100124219515,
+      "confidence_interval_high": 0.013962899875780484,
+      "effect_size": 1.2251572327044025,
+      "is_significant": true,
+      "control_n": 20000,
+      "treatment_n": 10000
+    }
+  ],
+  "findings": [
+    {
+      "metric_name": "paid_conversion",
+      "metric_role": "primary",
+      "is_significant": true,
+      "direction": "positive",
+      "summary": "paid_conversion improved by +21.4% (p=0.000), a statistically significant win."
+    },
+    {
+      "metric_name": "paid_plan_canceled",
+      "metric_role": "guardrail",
+      "is_significant": true,
+      "direction": "negative",
+      "summary": "paid_plan_canceled worsened by +22.5% (p=0.000) \u2014 guardrail violation."
+    }
+  ],
+  "recommendation": {
+    "decision": "review guardrail",
+    "rationale": "paid_plan_canceled increased alongside paid_conversion \u2014 this may reflect volume growth rather than quality degradation. Verify the metric rate among the affected population before deciding.",
+    "caveats": [
+      "Verify the guardrail metric rate within the affected subpopulation before making a ship decision."
+    ]
+  }
+}
