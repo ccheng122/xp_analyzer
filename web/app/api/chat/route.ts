@@ -57,7 +57,12 @@ Guidelines:
 function getSubgroupUrl(): string {
   // Explicit override always wins (local dev or custom deploy)
   if (process.env.FLASK_SUBGROUP_URL) return `${process.env.FLASK_SUBGROUP_URL}/api/subgroup`
-  // On Vercel production/preview, call the co-deployed Python function
+  // Prefer the production alias (unprotected) over VERCEL_URL — the deployment-
+  // specific hostname is gated by Vercel Deployment Protection and 401s on
+  // internal function-to-function fetches. See docs/ARCHITECTURE_DECISIONS.md.
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/subgroup`
+  }
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/subgroup`
   // Fallback for local dev without explicit config
   const base = process.env.FLASK_URL ?? 'http://localhost:5002'
