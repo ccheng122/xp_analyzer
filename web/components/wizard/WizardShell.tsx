@@ -1,14 +1,15 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { WizardState, ExperimentConfig } from '@/lib/types'
+import { setExperiment } from '@/lib/experimentStore'
 import { StepIndicator } from './StepIndicator'
 import { UploadCsv } from './UploadCsv'
 import { ExperimentSetup } from './ExperimentSetup'
 import { AddMetrics } from './AddMetrics'
 import { ReviewRun } from './ReviewRun'
-import { ReportViewV2 } from '@/components/report/ReportViewV2'
 
-const STEPS = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run', 'Results']
+const STEPS = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run']
 
 const DEFAULT_CONFIG: Partial<ExperimentConfig> = {
   significance_threshold: 0.05,
@@ -16,14 +17,16 @@ const DEFAULT_CONFIG: Partial<ExperimentConfig> = {
   metrics: [],
 }
 
+const INITIAL_STATE: WizardState = {
+  step: 1,
+  csv: null,
+  config: DEFAULT_CONFIG,
+  error: null,
+}
+
 export function WizardShell() {
-  const [state, setState] = useState<WizardState>({
-    step: 1,
-    csv: null,
-    config: DEFAULT_CONFIG,
-    result: null,
-    error: null,
-  })
+  const router = useRouter()
+  const [state, setState] = useState<WizardState>(INITIAL_STATE)
   const [highestStep, setHighestStep] = useState(1)
 
   function advance() {
@@ -79,18 +82,18 @@ export function WizardShell() {
             csv={state.csv}
             config={state.config as ExperimentConfig}
             error={state.error}
-            onResult={result => setState(s => ({ ...s, result, step: 5 }))}
+            onResult={result => {
+              const id = crypto.randomUUID()
+              setExperiment(id, {
+                result,
+                config: state.config as ExperimentConfig,
+                csvFile: state.csv!.file,
+              })
+              setState(INITIAL_STATE)
+              setHighestStep(1)
+              router.push(`/experiment/${id}`)
+            }}
             onError={error => setState(s => ({ ...s, error }))}
-          />
-        )}
-        {state.step === 5 && state.result && (
-          <ReportViewV2
-            result={state.result}
-            config={state.config as ExperimentConfig}
-            csvFile={state.csv?.file}
-            onRunAnother={() =>
-              setState({ step: 1, csv: null, config: DEFAULT_CONFIG, result: null, error: null })
-            }
           />
         )}
       </div>

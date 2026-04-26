@@ -82,9 +82,8 @@ export interface ParsedCsv {
 }
 
 export interface WizardState {
-  step: 1 | 2 | 3 | 4 | 5
+  step: 1 | 2 | 3 | 4
   csv: ParsedCsv | null
   config: Partial<ExperimentConfig>
-  result: ExperimentResult | null
   error: string | null
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { StepIndicator } from '../wizard/StepIndicator'
 
-const steps = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run', 'Results']
+const steps = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run']
 
 describe('StepIndicator', () => {
   it('marks completed steps with a checkmark', () => {
@@ -20,6 +20,6 @@ describe('StepIndicator', () => {
   it('dims upcoming steps', () => {
     render(<StepIndicator steps={steps} currentStep={1} />)
     const upcoming = screen.getAllByTestId('step-upcoming')
-    expect(upcoming).toHaveLength(4)
+    expect(upcoming).toHaveLength(3)
   })
 })
