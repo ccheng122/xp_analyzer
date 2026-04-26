@@ -19,6 +19,7 @@ export default function PreviewPage() {
 
   return (
     <div className="bg-page min-h-screen p-6">
+      <div className='mx-auto max-w-5xl'>
       <div className="mb-4 flex items-center gap-3 flex-wrap">
         <div className="text-section font-medium text-text">ReportView V2 preview</div>
         <span className="text-meta text-muted">·</span>
@@ -46,6 +47,7 @@ export default function PreviewPage() {
         csvFile={placeholderCsv}
         onRunAnother={() => {}}
       />
+      </div>
     </div>
   )
 }

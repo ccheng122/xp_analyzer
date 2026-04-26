@@ -6,7 +6,7 @@ import { UploadCsv } from './UploadCsv'
 import { ExperimentSetup } from './ExperimentSetup'
 import { AddMetrics } from './AddMetrics'
 import { ReviewRun } from './ReviewRun'
-import { ReportView } from '@/components/report/ReportView'
+import { ReportViewV2 } from '@/components/report/ReportViewV2'
 
 const STEPS = ['Upload CSV', 'Experiment Setup', 'Add Metrics', 'Review & Run', 'Results']
 
@@ -84,7 +84,7 @@ export function WizardShell() {
           />
         )}
         {state.step === 5 && state.result && (
-          <ReportView
+          <ReportViewV2
             result={state.result}
             config={state.config as ExperimentConfig}
             csvFile={state.csv?.file}
