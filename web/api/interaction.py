@@ -74,11 +74,16 @@ def interaction():
     work = pd.DataFrame()
     work['_treatment'] = (df[treatment_column].astype(str) != str(control_value)).astype(int)
     if metric_type == 'binary':
-        # Treat object/string columns as "is non-null" — matches subgroup.py's not_null_rate convention.
-        if df[metric_column].dtype == 'object':
-            work['_metric'] = df[metric_column].notna().astype(int)
+        # Numeric columns: treat 0/NaN as 0, anything else as itself — caller's responsibility
+        # to ensure values are 0/1. Non-numeric (object, string, string[pyarrow], datetime,
+        # category): treat presence as 1 — matches subgroup.py's not_null_rate convention.
+        # The dtype check pre-2026-04 was 'object'-only, which broke when production pandas
+        # parsed mostly-empty date columns as 'string' or 'datetime64'.
+        series = df[metric_column]
+        if pd.api.types.is_numeric_dtype(series):
+            work['_metric'] = pd.to_numeric(series, errors='coerce').fillna(0).astype(int)
         else:
-            work['_metric'] = pd.to_numeric(df[metric_column], errors='coerce').fillna(0).astype(int)
+            work['_metric'] = series.notna().astype(int)
     else:
         work['_metric'] = pd.to_numeric(df[metric_column], errors='coerce')
     work['_breakdown'] = df[breakdown_col].astype(str)
