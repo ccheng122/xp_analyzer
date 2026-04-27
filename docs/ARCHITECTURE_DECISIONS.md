@@ -45,6 +45,21 @@ Append-only log of non-obvious tradeoffs. Each entry uses the template at the bo
 - `crypto.randomUUID()` requires a secure context (HTTPS or localhost). Both apply for our use cases.
 - If we ever add backend persistence with its own id strategy (incremental, ULID, etc.), we change the generator in one place.
 
+## Interaction-test tool — dedicated endpoint, no per-bucket p-values
+**Date:** 2026-04-26
+**Status:** Accepted
+**Context:** Subgroup questions like "does the treatment effect differ by day of week?" are real PM asks, but `run_subgroup_analysis` only computes per-cell descriptives — Claude could show per-day rates but couldn't answer whether the variation was signal or noise. After adding multi-column groupby, the next obvious step was exposing a proper interaction test. statsmodels is already in xp_analyzer's deps, so the math is free.
+**Decision:** New `web/api/interaction.py` Flask function, deployed alongside analyze/subgroup as a Vercel Python function. Plus a `run_interaction_test` tool in the chat route. The endpoint fits `metric ~ treatment * breakdown` (logit for binary metrics, OLS for continuous), runs a joint Wald test on the interaction terms, and returns a markdown summary with the joint p-value + per-bucket descriptive lift. Per-bucket p-values are intentionally **not** returned.
+**Alternatives considered:**
+- **Co-locate with subgroup as a new aggregation type (`interaction_pvalue`).** Rejected: contracts are fundamentally different — subgroup returns a table indexed by groupby keys; interaction returns a single test statistic plus supporting descriptives. Shoehorning would muddle both tools' descriptions and Claude's selection logic.
+- **Generic `run_regression` tool taking an arbitrary formula string.** Rejected: more flexible but Claude can mis-construct formulas, and the surface area for errors balloons. Constrained tool is the safer bet.
+- **Return per-bucket p-values alongside the joint p-value.** Rejected: opens the multiple-comparison rabbit hole (Bonferroni? FDR? against what family?). The joint test answers the actual question ("is there *any* heterogeneity?"); per-bucket descriptives let the user/Claude eyeball direction without falsely-precise individual p-values.
+**Consequences:**
+- **Three Flask servers in local dev.** Adding a third local backend (port 5003) — the dev workflow is now `npm run dev` + three `flask --app …` commands. Worth wrapping in a script if it gets annoying.
+- **No multiple-comparison correction.** Per-bucket p-values were intentionally omitted. If someone wants Bonferroni-corrected per-bucket significance, they'll need to extend the endpoint and pick a correction method explicitly.
+- **Binary metric handling matches `not_null_rate` convention.** When `metric_column` is a date/object column, presence is treated as 1 (matches how analyze.py and subgroup.py interpret derived not-null metrics). If a user has a binary metric stored as 'yes'/'no' strings, this won't do what they want — they'd need to encode as 0/1 first.
+- **Interaction-only output.** The tool returns the *interaction* p-value, not the main treatment effect. Claude must combine this with the existing summary to give a complete picture (e.g., "treatment lifts conversion by X% overall, and that lift is consistent across days, p_interaction=0.45").
+
 ## Prefer `VERCEL_PROJECT_PRODUCTION_URL` over `VERCEL_URL` for internal subgroup calls
 **Date:** 2026-04-26
 **Status:** Accepted

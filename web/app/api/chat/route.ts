@@ -50,6 +50,7 @@ Guidelines:
 - Use the run_subgroup_analysis tool when the user asks about breakdowns by a column.
 - For date columns, you can derive day-of-week, week, month, or year — pass dayofweek(col), week(col), month(col), or year(col) as the group_column.
 - For multi-dimensional breakdowns (e.g. treatment effect by day of week), pass an array of column names as group_column, like ["treatment", "dayofweek(assignment_date)"]. This returns a single cross-tab so you can compute lift per bucket without multiple calls.
+- When the user asks whether the *effect* differs by a dimension ("is there a day-of-week effect?", "does the lift vary by tenure?"), use run_interaction_test. It fits a regression with the treatment × breakdown interaction and returns a single joint p-value plus per-bucket descriptive lift. run_subgroup_analysis gives per-bucket *rates*; run_interaction_test gives the *test* of whether the bucket-level differences are real signal vs. sampling noise.
 - If a question requires data not in the results and not derivable from the CSV columns above, say: "To answer that I'd need [specific data] which wasn't in your CSV."
 - Never guess or hallucinate statistics. If uncertain, say so.
 - Format responses clearly using markdown. Use tables for numeric comparisons.`
@@ -68,6 +69,15 @@ function getSubgroupUrl(): string {
   // Fallback for local dev without explicit config
   const base = process.env.FLASK_URL ?? 'http://localhost:5002'
   return `${base}/api/subgroup`
+}
+
+function getInteractionUrl(): string {
+  if (process.env.FLASK_INTERACTION_URL) return `${process.env.FLASK_INTERACTION_URL}/api/interaction`
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/interaction`
+  }
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/interaction`
+  return 'http://localhost:5003/api/interaction'
 }
 
 export async function POST(req: Request) {
@@ -166,6 +176,68 @@ export async function POST(req: Request) {
             return 'Subgroup analysis returned an unexpected response.'
           }
           return data.table
+        },
+      }),
+      run_interaction_test: tool({
+        description:
+          "Test whether the treatment effect varies across a breakdown dimension (e.g. 'is the day-of-week effect real?'). Fits a regression with treatment × breakdown interaction terms and returns a joint Wald p-value plus per-bucket descriptive lift. Use when the user asks whether an effect *differs* by a dimension — not for plain per-bucket rate breakdowns (use run_subgroup_analysis for those).",
+        inputSchema: z.object({
+          metric_column: z
+            .string()
+            .describe(
+              "CSV column for the outcome. For derived not_null binary metrics, pass the underlying column (e.g., 'paid_signup_date') with metric_type='binary'.",
+            ),
+          treatment_column: z.string().describe('CSV column with the treatment indicator.'),
+          breakdown_column: z
+            .string()
+            .describe(
+              "CSV column or date derivation for the breakdown dimension (e.g., 'dayofweek(assignment_date)').",
+            ),
+          metric_type: z
+            .enum(['binary', 'continuous'])
+            .describe('binary uses logistic regression; continuous uses OLS.'),
+          control_value: z
+            .string()
+            .optional()
+            .describe("Value of treatment_column representing control (default '0')."),
+        }),
+        execute: async ({
+          metric_column,
+          treatment_column,
+          breakdown_column,
+          metric_type,
+          control_value,
+        }) => {
+          if (!csvFile) {
+            return 'CSV is not available for interaction test in this context.'
+          }
+          const form = new FormData()
+          form.append('csv', csvFile)
+          form.append('metric_column', metric_column)
+          form.append('treatment_column', treatment_column)
+          form.append('breakdown_column', breakdown_column)
+          form.append('metric_type', metric_type)
+          if (control_value) form.append('control_value', control_value)
+          let res: Response
+          try {
+            res = await fetch(getInteractionUrl(), { method: 'POST', body: form })
+          } catch {
+            return 'Interaction test service is unavailable.'
+          }
+          if (!res.ok) {
+            const text = await res.text()
+            try {
+              const err = JSON.parse(text) as { error?: string }
+              return `Interaction test failed: ${err.error ?? text.slice(0, 200)}`
+            } catch {
+              return `Interaction test failed (${res.status}): ${text.slice(0, 200)}`
+            }
+          }
+          const data = await res.json()
+          if (typeof data.summary !== 'string') {
+            return 'Interaction test returned an unexpected response.'
+          }
+          return data.summary
         },
       }),
     },
