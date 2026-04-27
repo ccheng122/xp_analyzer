@@ -145,7 +145,7 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, error, stop } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       fetch: async (url: RequestInfo | URL, options?: RequestInit) => {
@@ -260,7 +260,7 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
 
         <div
           data-testid="report-right"
-          className="bg-surface border border-border rounded-card flex flex-col min-h-[520px] min-w-0"
+          className="bg-surface border border-border rounded-card flex flex-col h-[520px] min-w-0"
         >
           <div className="px-card-x py-card-y border-b border-border">
             <div className="text-section leading-tight font-medium text-text">
@@ -316,13 +316,23 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
               disabled={isLoading}
               className="flex-1 bg-surface border border-border rounded-control px-3 py-2 text-body leading-tight text-text placeholder:text-muted focus:outline-none focus:border-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="bg-text text-white text-body leading-tight font-medium rounded-control px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Send
-            </button>
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={() => stop()}
+                className="bg-text text-white text-body leading-tight font-medium rounded-control px-4 py-2 hover:opacity-90 cursor-pointer"
+              >
+                Stop
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="bg-text text-white text-body leading-tight font-medium rounded-control px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Send
+              </button>
+            )}
           </form>
         </div>
       </div>
