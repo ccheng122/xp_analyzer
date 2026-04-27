@@ -49,6 +49,7 @@ Guidelines:
 - Answer from the results above when possible.
 - Use the run_subgroup_analysis tool when the user asks about breakdowns by a column.
 - For date columns, you can derive day-of-week, week, month, or year — pass dayofweek(col), week(col), month(col), or year(col) as the group_column.
+- For multi-dimensional breakdowns (e.g. treatment effect by day of week), pass an array of column names as group_column, like ["treatment", "dayofweek(assignment_date)"]. This returns a single cross-tab so you can compute lift per bucket without multiple calls.
 - If a question requires data not in the results and not derivable from the CSV columns above, say: "To answer that I'd need [specific data] which wasn't in your CSV."
 - Never guess or hallucinate statistics. If uncertain, say so.
 - Format responses clearly using markdown. Use tables for numeric comparisons.`
@@ -120,7 +121,11 @@ export async function POST(req: Request) {
         description:
           'Run a groupby aggregation on the experiment CSV to answer a subgroup question. Use when the user asks about breakdowns by a column.',
         inputSchema: z.object({
-          group_column: z.string().describe('Column name to group by'),
+          group_column: z
+            .union([z.string(), z.array(z.string()).min(1)])
+            .describe(
+              'Column to group by. Pass a string for a single dimension (e.g. "treatment" or "dayofweek(date)"), or an array for multi-dimensional cross-tabs (e.g. ["treatment", "dayofweek(date)"]).',
+            ),
           metric_columns: z.array(z.string()).describe('Column names to aggregate'),
           aggregation: z
             .enum(['mean', 'count', 'sum', 'not_null_rate'])
@@ -132,7 +137,10 @@ export async function POST(req: Request) {
           }
           const subgroupForm = new FormData()
           subgroupForm.append('csv', csvFile)
-          subgroupForm.append('group_column', group_column)
+          subgroupForm.append(
+            'group_column',
+            Array.isArray(group_column) ? JSON.stringify(group_column) : group_column,
+          )
           subgroupForm.append('metric_columns', JSON.stringify(metric_columns))
           subgroupForm.append('aggregation', aggregation)
           let res: Response

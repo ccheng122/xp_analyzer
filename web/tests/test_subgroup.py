@@ -179,3 +179,76 @@ def test_subgroup_multiple_metrics(client):
     data = response.get_json()
     assert 'value' in data['table']
     assert 'other' in data['table']
+
+
+MULTI_CSV = (
+    "treatment,assignment_date,converted\n"
+    "0,2024-01-01,1\n"  # Mon, control, converted
+    "0,2024-01-01,0\n"  # Mon, control, not
+    "0,2024-01-02,1\n"  # Tue, control, converted
+    "1,2024-01-01,1\n"  # Mon, treatment, converted
+    "1,2024-01-02,1\n"  # Tue, treatment, converted
+    "1,2024-01-02,0\n"  # Tue, treatment, not
+)
+
+
+def test_subgroup_multi_column_groupby(client):
+    """Passing a JSON list as group_column produces a cross-tab table."""
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(MULTI_CSV.encode()), 'data.csv'),
+            'group_column': json.dumps(['treatment', 'dayofweek(assignment_date)']),
+            'metric_columns': json.dumps(['converted']),
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    table = data['table']
+    # Header should include both index columns
+    assert 'treatment' in table
+    assert 'dayofweek(assignment_date)' in table
+    # Should have a row for each treatment × day combination present
+    assert 'Monday' in table
+    assert 'Tuesday' in table
+
+
+def test_subgroup_multi_column_too_many_combinations(client):
+    """50-bucket cap applies to combinations, not just one column."""
+    rows = []
+    for i in range(8):
+        for j in range(8):  # 8 × 8 = 64 combinations > 50
+            rows.append(f"{i},{j},1.0")
+    csv = "a,b,value\n" + "\n".join(rows)
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(csv.encode()), 'data.csv'),
+            'group_column': json.dumps(['a', 'b']),
+            'metric_columns': json.dumps(['value']),
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+    assert 'Too many' in response.get_json()['error']
+
+
+def test_subgroup_single_column_via_json_array(client):
+    """An array with one column name behaves like the legacy string form."""
+    response = client.post(
+        '/api/subgroup',
+        data={
+            'csv': (BytesIO(CSV.encode()), 'data.csv'),
+            'group_column': json.dumps(['group']),
+            'metric_columns': json.dumps(['value']),
+            'aggregation': 'mean',
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'a' in data['table']
+    assert '1.5' in data['table']
