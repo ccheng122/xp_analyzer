@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type {
   Decision,
   ExperimentConfig,
@@ -65,6 +66,67 @@ function metricDescription(r: MetricResult): string {
 function isMetricViolation(r: MetricResult): boolean {
   if (!r.is_significant || r.metric_role !== 'guardrail') return false
   return r.higher_is_better ? r.relative_lift < 0 : r.relative_lift > 0
+}
+
+function stripEmojiShortcodes(text: string): string {
+  // Drop GitHub-style :name: codes; require a leading letter so timestamps like 12:30:00 survive.
+  return text.replace(/:[a-z][a-z0-9_+\-]*:/gi, '')
+}
+
+const markdownComponents: Components = {
+  table: (props) => (
+    <table
+      className="border-collapse border-border my-2 text-meta"
+      style={{ borderWidth: '0.5px' }}
+      {...props}
+    />
+  ),
+  th: (props) => (
+    <th
+      className="border-border text-left font-medium"
+      style={{ borderWidth: '0.5px', padding: '6px 10px' }}
+      {...props}
+    />
+  ),
+  td: (props) => (
+    <td
+      className="border-border"
+      style={{ borderWidth: '0.5px', padding: '6px 10px' }}
+      {...props}
+    />
+  ),
+  pre: (props) => (
+    <pre
+      className="bg-surface-subtle rounded-control px-3 py-2 text-meta my-2 overflow-x-auto"
+      {...props}
+    />
+  ),
+  code: ({ className, children, ...props }) => {
+    const isBlock = !!className?.includes('language-')
+    if (isBlock) {
+      return (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      )
+    }
+    return (
+      <code
+        className="bg-surface-subtle rounded-control px-1 py-0.5 text-meta"
+        {...props}
+      >
+        {children}
+      </code>
+    )
+  },
+  h1: (props) => <h1 className="text-section font-medium leading-tight mt-3 mb-1" {...props} />,
+  h2: (props) => <h2 className="text-section font-medium leading-tight mt-3 mb-1" {...props} />,
+  h3: (props) => <h3 className="text-label font-medium leading-tight mt-2 mb-1" {...props} />,
+  h4: (props) => <h4 className="text-label font-medium leading-tight mt-2 mb-1" {...props} />,
+  p: (props) => <p className="text-body leading-body my-1" {...props} />,
+  ul: (props) => <ul className="list-disc pl-5 my-1 text-body leading-body" {...props} />,
+  ol: (props) => <ol className="list-decimal pl-5 my-1 text-body leading-body" {...props} />,
+  li: (props) => <li className="my-0.5" {...props} />,
 }
 
 function downloadJson(result: ExperimentResult) {
@@ -218,7 +280,13 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
                 .join('')
               return (
                 <ChatBubble key={m.id} role={m.role}>
-                  {m.role === 'assistant' ? <ReactMarkdown>{text}</ReactMarkdown> : <p>{text}</p>}
+                  {m.role === 'assistant' ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                      {stripEmojiShortcodes(text)}
+                    </ReactMarkdown>
+                  ) : (
+                    <p>{text}</p>
+                  )}
                 </ChatBubble>
               )
             })}
