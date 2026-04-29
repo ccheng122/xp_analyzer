@@ -219,7 +219,7 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
 
       <div
         data-testid="report-grid"
-        className="grid gap-3"
+        className="grid gap-3 min-h-report-grid"
         style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.1fr)' }}
       >
         <div data-testid="report-left" className="flex flex-col gap-2.5 min-w-0">
@@ -260,7 +260,7 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
 
         <div
           data-testid="report-right"
-          className="bg-surface border border-border rounded-card flex flex-col h-[520px] min-w-0"
+          className="bg-surface border border-border rounded-card flex flex-col min-w-0"
         >
           <div className="px-card-x py-card-y border-b border-border">
             <div className="text-section leading-tight font-medium text-text">
@@ -269,7 +269,7 @@ export function ReportViewV2({ result, config, csvFile, onRunAnother }: Props) {
           </div>
 
           <div
-            className="flex-1 overflow-y-auto px-card-x py-card-y space-y-3"
+            className="flex-1 min-h-0 overflow-y-auto px-card-x py-card-y space-y-3"
             data-testid="chat-messages"
           >
             {messages.map((m: UIMessage) => {
